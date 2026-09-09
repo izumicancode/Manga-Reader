@@ -81,7 +81,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 body.no-anim .book-card, body.no-anim .view, body.no-anim .reader-toolbar { transition: none !important; }
 .book-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .cover-wrap { position: relative; width: 100%; aspect-ratio: 2 / 3; background: var(--bg-hover); overflow: hidden; }
-.cover-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; image-rendering: auto; }
 .cover-placeholder {
   width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
   font-size: 32px; color: var(--text-muted);

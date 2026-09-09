@@ -14,7 +14,7 @@ const FIT_LABELS = { contain: 'Fit: Page', width: 'Fit: Width', height: 'Fit: He
 const FIT_CYCLE = ['contain', 'width', 'height', 'original'];
 
 const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 // Surface unexpected errors instead of letting the UI silently freeze.
 window.addEventListener('error', (e) => console.error('[renderer] error:', e.error || e.message));
@@ -242,7 +242,7 @@ async function loadCoverImage(book) {
 // ---------- History / Continue reading ----------
 
 async function refreshHistory() {
-  state.history = await window.api.getHistory();
+  state.history = await safeInvoke(window.api.getHistory(), state.history, 'Could not load reading history.');
   const entries = Object.entries(state.history)
     .filter(([id]) => state.books.find((b) => b.id === id))
     .sort((a, b) => (b[1].lastReadAt || 0) - (a[1].lastReadAt || 0));
@@ -408,7 +408,8 @@ function bindEvents() {
   $('#pick-folder').addEventListener('click', pickFolder);
   $('#pick-folder-empty').addEventListener('click', pickFolder);
   $('#rescan').addEventListener('click', async () => {
-    const res = await safeInvoke(window.api.scanLibrary(), { books: [] }, "Couldn't rescan your library.");
+    const res = await safeInvoke(window.api.scanLibrary(), null, "Couldn't rescan your library.");
+    if (!res) return;
     state.books = res.books || [];
     updateCategoryFilter(state.books);
     renderLibraryGrid(state.books);
@@ -517,13 +518,15 @@ function applyFitMode() {
 }
 
 function pickFolder() {
-  window.api.chooseLibraryFolder().then(async (folder) => {
+  safeInvoke(window.api.chooseLibraryFolder(), null, "Couldn't choose a library folder.").then(async (folder) => {
     if (!folder) return;
+    const res = await safeInvoke(window.api.scanLibrary(), null, "Couldn't scan the selected library folder.");
+    if (!res) return;
     $('#library-folder-path').textContent = folder;
-    const res = await window.api.scanLibrary();
-    state.books = res.books;
+    state.books = res.books || [];
     updateCategoryFilter(state.books);
-    renderLibraryGrid(state.books);
+    renderLibraryGrid(state.books, $('#search').value);
+    if (res.skipped && res.skipped.length) showToast(`Skipped ${res.skipped.length} file(s) that couldn't be read.`);
   });
 }
 

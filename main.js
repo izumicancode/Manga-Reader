@@ -98,18 +98,19 @@ function sourcePages(filePath, type) {
 // Determines the correct file extension for a cached cover, since the source
 // image inside the zip might be png/webp/etc, not always jpg.
 function extractCoverToCache(filePath, id) {
-  const existing = fs.readdirSync(thumbDir()).find(f => f.startsWith(id + '.'));
+  const existing = fs.readdirSync(thumbDir()).find(f => f.startsWith(id + '-cover.'));
   if (existing) return path.join(thumbDir(), existing);
   try {
     const type = sourceType(filePath);
     if (type === 'image') {
-      fs.copyFileSync(filePath, path.join(thumbDir(), `${id}${path.extname(filePath).toLowerCase()}`));
-      return path.join(thumbDir(), `${id}${path.extname(filePath).toLowerCase()}`);
+      const outPath = path.join(thumbDir(), `${id}-cover${path.extname(filePath).toLowerCase()}`);
+      fs.copyFileSync(filePath, outPath);
+      return outPath;
     }
     if (type === 'folder') {
       const first = sortedFolderImages(filePath)[0];
       if (!first) return null;
-      const outPath = path.join(thumbDir(), `${id}${path.extname(first).toLowerCase()}`);
+      const outPath = path.join(thumbDir(), `${id}-cover${path.extname(first).toLowerCase()}`);
       fs.copyFileSync(path.join(filePath, first), outPath);
       return outPath;
     }
@@ -117,7 +118,7 @@ function extractCoverToCache(filePath, id) {
     const images = sortedImageEntries(zip);
     if (!images.length) return null;
     const ext = path.extname(images[0].entryName).toLowerCase() || '.jpg';
-    const outPath = path.join(thumbDir(), `${id}${ext}`);
+    const outPath = path.join(thumbDir(), `${id}-cover${ext}`);
     fs.writeFileSync(outPath, images[0].getData());
     return outPath;
   } catch (err) {
