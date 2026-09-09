@@ -5,6 +5,9 @@ const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const Store = require('electron-store');
 
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu');
+
 // Catch anything that would otherwise crash the whole main process silently.
 process.on('uncaughtException', (err) => {
   console.error('[main] uncaughtException:', err);
@@ -369,9 +372,11 @@ function createWindow() {
 
   // If the renderer crashes (OOM, GPU issue, etc.) it would otherwise leave a
   // blank/frozen window with no feedback — reload instead of leaving it dead.
+  let recoveryAttempts = 0;
   win.webContents.on('render-process-gone', (_e, details) => {
     console.error('[main] renderer process gone:', details.reason);
-    if (details.reason !== 'clean-exit') {
+    if (details.reason !== 'clean-exit' && recoveryAttempts < 1) {
+      recoveryAttempts++;
       dialog.showErrorBox('Manga Library', 'The app view crashed and will now reload.');
       win.reload();
     }

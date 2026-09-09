@@ -75,14 +75,17 @@ const DEFAULTS_FALLBACK = {
 };
 
 function applyAppearance(settings) {
-  document.body.dataset.theme = settings.theme || 'dark';
-  document.body.dataset.readingDirection = settings.readingDirection || 'ltr';
-  document.documentElement.style.setProperty('--accent', settings.accentColor || '#e0555a');
-  document.documentElement.style.setProperty('--accent-soft', (settings.accentColor || '#e0555a') + '22');
+  const theme = ['dark', 'light'].includes(settings.theme) ? settings.theme : 'dark';
+  const direction = ['ltr', 'rtl'].includes(settings.readingDirection) ? settings.readingDirection : 'ltr';
+  const accent = /^#[0-9a-fA-F]{6}$/.test(settings.accentColor || '') ? settings.accentColor : '#e0555a';
+  document.body.dataset.theme = theme;
+  document.body.dataset.readingDirection = direction;
+  document.documentElement.style.setProperty('--accent', accent);
+  document.documentElement.style.setProperty('--accent-soft', accent + '22');
   const cardMinMap = { small: '120px', medium: '160px', large: '210px' };
-  document.documentElement.style.setProperty('--card-min', cardMinMap[settings.cardSize] || '160px');
+  document.documentElement.style.setProperty('--card-min', cardMinMap[settings.cardSize] || cardMinMap.medium);
   document.body.classList.toggle('no-anim', settings.animationsEnabled === false);
-  state.fitMode = settings.defaultFit || 'contain';
+  state.fitMode = FIT_CYCLE.includes(settings.defaultFit) ? settings.defaultFit : 'contain';
   updateSettingsUI(settings);
 }
 
