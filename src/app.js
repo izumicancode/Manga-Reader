@@ -570,6 +570,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ok) {
         closePinSetup();
         showToast('PIN lock enabled.');
+      } else {
+        $('#pin-toggle').checked = false;
       }
     } else {
       const ok = await safeInvoke(window.api.pinDisable(val), false, "Couldn't verify PIN. Try again.");
