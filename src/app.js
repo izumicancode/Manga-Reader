@@ -7,6 +7,10 @@ const state = {
   settings: {},
   fitMode: 'contain',
   category: 'all',
+  sort: 'title',
+  zoom: 1,
+  spread: false,
+  bookmarks: [],
 };
 
 const ACCENT_PRESETS = ['#e0555a', '#e08a3c', '#d8c445', '#5fb87a', '#4a9fd8', '#8a6fd8', '#d85fa8'];
@@ -172,6 +176,11 @@ function renderLibraryGrid(books, filter = '') {
     const matchesSearch = !filter || book.title.toLowerCase().includes(filter.toLowerCase());
     const matchesCategory = state.category === 'all' || (book.category || 'Uncategorized') === state.category;
     return matchesSearch && matchesCategory;
+  }).sort((a, b) => {
+    if (state.sort === 'favorites') return Number(b.favorite) - Number(a.favorite) || a.title.localeCompare(b.title);
+    if (state.sort === 'progress') return (state.history[b.id]?.percent || 0) - (state.history[a.id]?.percent || 0);
+    if (state.sort === 'recent') return (state.history[b.id]?.lastReadAt || 0) - (state.history[a.id]?.lastReadAt || 0);
+    return a.title.localeCompare(b.title, undefined, { numeric: true });
   });
 
   if (!books.length) {
@@ -209,6 +218,7 @@ function bookCard(book) {
   card.innerHTML = `
     <div class="cover-wrap">
       <div class="cover-placeholder cover-loading">📕</div>
+      <button class="favorite-btn${book.favorite ? ' active' : ''}" title="${book.favorite ? 'Remove favorite' : 'Add favorite'}">${book.favorite ? '★' : '☆'}</button>
       ${isNew ? '<div class="badge-new">NEW</div>' : ''}
       ${percent > 0 ? `<div class="progress-bar" style="width:${percent}%"></div>` : ''}
     </div>
@@ -233,6 +243,12 @@ function bookCard(book) {
   }
 
   card.addEventListener('click', () => openReader(book.id));
+  card.querySelector('.favorite-btn').addEventListener('click', async (event) => {
+    event.stopPropagation();
+    const favorite = await safeInvoke(window.api.toggleFavorite(book.id), book.favorite, "Couldn't update favorite.");
+    book.favorite = favorite;
+    renderLibraryGrid(state.books, $('#search').value);
+  });
   return card;
 }
 
@@ -284,11 +300,17 @@ async function openReader(bookId) {
   state.currentBook = opened.book;
   state.currentPages = opened.pages;
   state.currentIndex = Math.min(Math.max(opened.resumePage, 0), opened.pages.length - 1);
+  state.bookmarks = opened.bookmarks || [];
+  state.zoom = 1;
+  state.spread = false;
 
   $('#reader').classList.remove('hidden');
   $('#reader-title').textContent = opened.book.title;
   state.fitMode = state.settings.defaultFit || 'contain';
   applyFitMode();
+  applyZoom();
+  updateSpreadButton();
+  updateBookmarkButton();
   if (window.showReaderToolbar) window.showReaderToolbar();
   await renderCurrentPage();
 }
@@ -302,9 +324,18 @@ async function renderCurrentPage() {
     "Couldn't load this page."
   );
   if (src) $('#reader-page').src = src;
+  const secondary = $('#reader-page-secondary');
+  if (state.spread && currentIndex < currentPages.length - 1) {
+    const secondSrc = await safeInvoke(window.api.getPage(currentBook.id, currentPages[currentIndex + 1]), null, "Couldn't load the second page.");
+    if (secondSrc) secondary.src = secondSrc;
+    secondary.classList.remove('hidden');
+  } else {
+    secondary.classList.add('hidden');
+  }
   $('#reader-counter').textContent = `${currentIndex + 1} / ${currentPages.length}`;
   const percent = (currentIndex + 1) / currentPages.length;
   await safeInvoke(window.api.saveProgress(currentBook.id, currentIndex, percent), false, '');
+  updateBookmarkButton();
 }
 
 function closeReader() {
@@ -314,14 +345,15 @@ function closeReader() {
 }
 
 function nextPage() {
+  const step = state.spread ? 2 : 1;
   if (state.currentIndex < state.currentPages.length - 1) {
-    state.currentIndex++;
+    state.currentIndex = Math.min(state.currentIndex + step, state.currentPages.length - 1);
     renderCurrentPage();
   }
 }
 function prevPage() {
   if (state.currentIndex > 0) {
-    state.currentIndex--;
+    state.currentIndex = Math.max(state.currentIndex - (state.spread ? 2 : 1), 0);
     renderCurrentPage();
   }
 }
@@ -419,6 +451,10 @@ function bindEvents() {
     state.category = e.target.value;
     renderLibraryGrid(state.books, $('#search').value);
   });
+  $('#sort-filter').addEventListener('change', (e) => {
+    state.sort = e.target.value;
+    renderLibraryGrid(state.books, $('#search').value);
+  });
 
   $('#pick-folder').addEventListener('click', pickFolder);
   $('#pick-folder-empty').addEventListener('click', pickFolder);
@@ -476,6 +512,21 @@ function bindEvents() {
   $('#reader-next').addEventListener('click', () => turnPage('next'));
   $('#reader-prev').addEventListener('click', () => turnPage('prev'));
   $('#reader-fit').addEventListener('click', cycleFitMode);
+  $('#reader-zoom-out').addEventListener('click', () => changeZoom(-0.1));
+  $('#reader-zoom-in').addEventListener('click', () => changeZoom(0.1));
+  $('#reader-bookmark').addEventListener('click', async () => {
+    const bookmarked = await safeInvoke(window.api.toggleBookmark(state.currentBook.id, state.currentIndex), null, "Couldn't update bookmark.");
+    if (bookmarked === null) return;
+    state.bookmarks = bookmarked
+      ? [...state.bookmarks, state.currentIndex].sort((a, b) => a - b)
+      : state.bookmarks.filter((page) => page !== state.currentIndex);
+    updateBookmarkButton();
+  });
+  $('#reader-spread').addEventListener('click', () => {
+    state.spread = !state.spread;
+    updateSpreadButton();
+    renderCurrentPage();
+  });
   $('#reader-fullscreen').addEventListener('click', async () => {
     const isFullscreen = await safeInvoke(window.api.toggleFullscreen(), false, "Couldn't toggle fullscreen.");
     $('#reader-fullscreen').textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
@@ -498,6 +549,10 @@ function bindEvents() {
       e.preventDefault();
       $('#reader-fullscreen').click();
     } else if (key === 'f') cycleFitMode();
+    if (key === '+' || key === '=') changeZoom(0.1);
+    if (key === '-') changeZoom(-0.1);
+    if (key === 'b') $('#reader-bookmark').click();
+    if (key === 's') $('#reader-spread').click();
     if (e.key === 'Escape') closeReader();
   });
 
@@ -528,6 +583,30 @@ function applyFitMode() {
   FIT_CYCLE.forEach((m) => img.classList.remove(`fit-${m}`));
   if (state.fitMode !== 'contain') img.classList.add(`fit-${state.fitMode}`);
   $('#reader-fit').textContent = FIT_LABELS[state.fitMode];
+}
+
+function applyZoom() {
+  const scale = state.zoom;
+  $('#reader-page').style.transform = `scale(${scale})`;
+  $('#reader-page-secondary').style.transform = `scale(${scale})`;
+  $('#reader-zoom-label').textContent = `${Math.round(scale * 100)}%`;
+}
+
+function updateBookmarkButton() {
+  const bookmarked = state.bookmarks.includes(state.currentIndex);
+  $('#reader-bookmark').textContent = bookmarked ? 'Bookmarked' : 'Bookmark';
+  $('#reader-bookmark').classList.toggle('active', bookmarked);
+}
+
+function updateSpreadButton() {
+  $('#reader-spread').textContent = state.spread ? 'Single Page' : 'Spread';
+  $('#reader-page').classList.toggle('spread', state.spread);
+  $('#reader-page-secondary').classList.toggle('spread', state.spread);
+}
+
+function changeZoom(delta) {
+  state.zoom = Math.min(3, Math.max(0.5, Math.round((state.zoom + delta) * 10) / 10));
+  applyZoom();
 }
 
 function pickFolder() {

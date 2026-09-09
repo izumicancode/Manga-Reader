@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
+const unrar = require('node-unrar-js');
 const Store = require('electron-store');
 
 app.disableHardwareAcceleration();
@@ -24,7 +25,8 @@ function initStores() {
 }
 
 const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif']);
-const ARCHIVE_EXT = new Set(['.cbz', '.zip']);
+const ARCHIVE_EXT = new Set(['.cbz', '.zip', '.cbr', '.rar']);
+const rarCache = new Map();
 const thumbDir = () => {
   const dir = path.join(app.getPath('userData'), 'thumbnails');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -91,16 +93,37 @@ function sortedFolderImages(folderPath) {
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 }
 
-function sourcePages(filePath, type) {
+async function loadRar(filePath) {
+  const stat = fs.statSync(filePath);
+  const cached = rarCache.get(filePath);
+  if (cached && cached.mtimeMs === stat.mtimeMs) return cached;
+
+  const data = Uint8Array.from(fs.readFileSync(filePath)).buffer;
+  const extractor = await unrar.createExtractorFromData({ data });
+  const headers = [...extractor.getFileList().fileHeaders]
+    .filter(header => !header.flags.directory && IMAGE_EXT.has(path.extname(header.name).toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  const extracted = extractor.extract({ files: headers.map(header => header.name) });
+  const content = new Map();
+  for (const file of extracted.files) content.set(file.fileHeader.name, Buffer.from(file.extraction));
+  const result = { mtimeMs: stat.mtimeMs, pages: headers.map(header => header.name), content };
+  rarCache.set(filePath, result);
+  return result;
+}
+
+async function sourcePages(filePath, type) {
   if (type === 'folder') return sortedFolderImages(filePath);
   if (type === 'image') return [path.basename(filePath)];
+  if (ARCHIVE_EXT.has(path.extname(filePath).toLowerCase()) && ['.cbr', '.rar'].includes(path.extname(filePath).toLowerCase())) {
+    return (await loadRar(filePath)).pages;
+  }
   const zip = new AdmZip(filePath);
   return sortedImageEntries(zip).map(entry => entry.entryName);
 }
 
 // Determines the correct file extension for a cached cover, since the source
 // image inside the zip might be png/webp/etc, not always jpg.
-function extractCoverToCache(filePath, id) {
+async function extractCoverToCache(filePath, id) {
   const existing = fs.readdirSync(thumbDir()).find(f => f.startsWith(id + '-cover.'));
   if (existing) return path.join(thumbDir(), existing);
   try {
@@ -117,6 +140,14 @@ function extractCoverToCache(filePath, id) {
       fs.copyFileSync(path.join(filePath, first), outPath);
       return outPath;
     }
+    if (['.cbr', '.rar'].includes(path.extname(filePath).toLowerCase())) {
+      const archive = await loadRar(filePath);
+      const first = archive.pages[0];
+      if (!first) return null;
+      const outPath = path.join(thumbDir(), `${id}-cover${path.extname(first).toLowerCase()}`);
+      fs.writeFileSync(outPath, archive.content.get(first));
+      return outPath;
+    }
     const zip = new AdmZip(filePath);
     const images = sortedImageEntries(zip);
     if (!images.length) return null;
@@ -130,9 +161,9 @@ function extractCoverToCache(filePath, id) {
   }
 }
 
-function countPages(filePath) {
+async function countPages(filePath) {
   try {
-    return sourcePages(filePath, sourceType(filePath)).length;
+    return (await sourcePages(filePath, sourceType(filePath))).length;
   } catch { return 0; }
 }
 
@@ -214,14 +245,18 @@ ipcMain.handle('scan-library', async () => {
       const type = sourceType(filePath);
       const title = displayTitle(filePath, folder, type);
       const category = categoryFor(filePath, folder);
-      const cover = extractCoverToCache(filePath, id);
-      const pageCount = needsRescan ? countPages(filePath) : prev.pageCount;
+      const cover = await extractCoverToCache(filePath, id);
+      const pageCount = needsRescan ? await countPages(filePath) : prev.pageCount;
 
       // A CBZ with zero readable images is corrupt/unsupported — keep it out of
       // the library instead of showing a permanently-broken card.
       if (pageCount === 0) { failed.push(filePath); continue; }
 
-      books[id] = { id, title, category, type, filePath, cover, pageCount, mtimeMs: stat.mtimeMs, sizeBytes: stat.size };
+      books[id] = {
+        id, title, category, type, filePath, cover, pageCount,
+        favorite: !!(prev && prev.favorite), tags: prev && Array.isArray(prev.tags) ? prev.tags : [],
+        mtimeMs: stat.mtimeMs, sizeBytes: stat.size,
+      };
     } catch (err) {
       console.error('Skipping unreadable file', filePath, err.message);
       failed.push(filePath);
@@ -250,24 +285,37 @@ ipcMain.handle('get-cover', (e, bookId) => {
 
 ipcMain.handle('get-library', () => Object.values(libraryStore.get('books', {})));
 
+ipcMain.handle('toggle-favorite', (e, bookId) => {
+  try {
+    const book = libraryStore.get(`books.${bookId}`);
+    if (!book) return false;
+    book.favorite = !book.favorite;
+    libraryStore.set(`books.${bookId}`, book);
+    return book.favorite;
+  } catch (err) {
+    console.error('toggle-favorite failed', err.message);
+    return false;
+  }
+});
+
 // ---------- IPC: reading ----------
 
-ipcMain.handle('open-book', (e, bookId) => {
+ipcMain.handle('open-book', async (e, bookId) => {
   try {
     const book = libraryStore.get(`books.${bookId}`);
     if (!book || !fs.existsSync(book.filePath)) return { error: 'missing-file' };
-    const pages = sourcePages(book.filePath, book.type || sourceType(book.filePath));
+    const pages = await sourcePages(book.filePath, book.type || sourceType(book.filePath));
     if (!pages.length) return { error: 'no-pages' };
     const hist = historyStore.get(bookId, { page: 0, percent: 0 });
     const resumePage = Math.min(hist.page || 0, pages.length - 1);
-    return { book, pages, resumePage, error: null };
+    return { book, pages, resumePage, bookmarks: hist.bookmarks || [], error: null };
   } catch (err) {
     console.error('open-book failed', err.message);
     return { error: 'read-failed' };
   }
 });
 
-ipcMain.handle('get-page', (e, bookId, pageName) => {
+ipcMain.handle('get-page', async (e, bookId, pageName) => {
   try {
     const book = libraryStore.get(`books.${bookId}`);
     if (!book) return null;
@@ -277,6 +325,9 @@ ipcMain.handle('get-page', (e, bookId, pageName) => {
       const imagePath = type === 'image' ? book.filePath : path.join(book.filePath, pageName);
       if (!fs.existsSync(imagePath)) return null;
       buf = fs.readFileSync(imagePath);
+    } else if (['.cbr', '.rar'].includes(path.extname(book.filePath).toLowerCase())) {
+      buf = (await loadRar(book.filePath)).content.get(pageName);
+      if (!buf) return null;
     } else {
       const zip = new AdmZip(book.filePath);
       const entry = zip.getEntry(pageName);
@@ -294,10 +345,25 @@ ipcMain.handle('get-page', (e, bookId, pageName) => {
 
 ipcMain.handle('save-progress', (e, bookId, page, percent) => {
   try {
-    historyStore.set(bookId, { page, percent, lastReadAt: Date.now() });
+    historyStore.set(bookId, { ...historyStore.get(bookId, {}), page, percent, lastReadAt: Date.now() });
     return true;
   } catch (err) {
     console.error('save-progress failed', err.message);
+    return false;
+  }
+});
+
+ipcMain.handle('toggle-bookmark', (e, bookId, page) => {
+  try {
+    const history = historyStore.get(bookId, {});
+    const bookmarks = Array.isArray(history.bookmarks) ? history.bookmarks : [];
+    const index = bookmarks.indexOf(page);
+    if (index >= 0) bookmarks.splice(index, 1);
+    else bookmarks.push(page);
+    historyStore.set(bookId, { ...history, bookmarks: bookmarks.sort((a, b) => a - b) });
+    return index < 0;
+  } catch (err) {
+    console.error('toggle-bookmark failed', err.message);
     return false;
   }
 });

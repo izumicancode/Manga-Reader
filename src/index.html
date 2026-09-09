@@ -46,6 +46,12 @@
         <select id="category-filter" aria-label="Filter by category">
           <option value="all">All categories</option>
         </select>
+        <select id="sort-filter" aria-label="Sort library">
+          <option value="title">Title</option>
+          <option value="recent">Recently read</option>
+          <option value="progress">Progress</option>
+          <option value="favorites">Favorites</option>
+        </select>
       </div>
     </header>
 
@@ -213,7 +219,7 @@
 
         <section class="settings-card">
           <h2>About</h2>
-          <div class="row-sub">Manga Library v1.0.0 — reads local image folders, images, ZIP, and CBZ files. No internet connection used.</div>
+          <div class="row-sub">Manga Library v1.0.0 — reads local image folders, images, ZIP, CBZ, and CBR files. No internet connection used.</div>
         </section>
       </div>
     </main>
@@ -223,6 +229,7 @@
   <section id="reader" class="reader hidden">
     <div id="reader-page-wrap" class="reader-page-wrap">
       <img id="reader-page" class="reader-page" alt="page" />
+      <img id="reader-page-secondary" class="reader-page hidden" alt="second page" />
     </div>
     <div class="reader-toolbar">
       <button id="reader-back" class="rt-btn">← Library</button>
@@ -232,6 +239,11 @@
         <div id="reader-counter" class="rt-counter">1 / 1</div>
         <button id="reader-next" class="rt-btn">Next ›</button>
         <button id="reader-fit" class="rt-btn" title="Cycle fit mode">Fit: Page</button>
+        <button id="reader-zoom-out" class="rt-btn" title="Zoom out">−</button>
+        <span id="reader-zoom-label" class="rt-counter">100%</span>
+        <button id="reader-zoom-in" class="rt-btn" title="Zoom in">+</button>
+        <button id="reader-bookmark" class="rt-btn" title="Bookmark page">Bookmark</button>
+        <button id="reader-spread" class="rt-btn" title="Toggle double-page view">Spread</button>
         <button id="reader-fullscreen" class="rt-btn" title="Toggle fullscreen">Fullscreen</button>
       </div>
     </div>
