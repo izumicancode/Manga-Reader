@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('api', {
   getPage: (bookId, pageName) => ipcRenderer.invoke('get-page', bookId, pageName),
   saveProgress: (bookId, page, percent) => ipcRenderer.invoke('save-progress', bookId, page, percent),
   getHistory: () => ipcRenderer.invoke('get-history'),
+  clearHistory: () => ipcRenderer.invoke('clear-history'),
+  toggleFullscreen: () => ipcRenderer.invoke('toggle-fullscreen'),
   pinStatus: () => ipcRenderer.invoke('pin-status'),
   pinSet: (pin) => ipcRenderer.invoke('pin-set', pin),
   pinDisable: (pin) => ipcRenderer.invoke('pin-disable', pin),

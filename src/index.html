@@ -43,6 +43,9 @@
       </nav>
       <div class="topbar-actions">
         <input id="search" type="text" placeholder="Search titles…" />
+        <select id="category-filter" aria-label="Filter by category">
+          <option value="all">All categories</option>
+        </select>
       </div>
     </header>
 
@@ -73,6 +76,13 @@
           <div class="row">
             <div class="row-title">Rescan for new files</div>
             <button id="rescan" class="btn">Rescan Now</button>
+          </div>
+          <div class="row">
+            <div>
+              <div class="row-title">Reading history</div>
+              <div class="row-sub">Remove all saved progress from Continue Reading.</div>
+            </div>
+            <button id="clear-history" class="btn danger">Clear History</button>
           </div>
         </section>
 
@@ -203,7 +213,7 @@
 
         <section class="settings-card">
           <h2>About</h2>
-          <div class="row-sub">Manga Library v1.0.0 — reads local .cbz files. No internet connection used.</div>
+          <div class="row-sub">Manga Library v1.0.0 — reads local image folders, images, ZIP, and CBZ files. No internet connection used.</div>
         </section>
       </div>
     </main>
@@ -222,6 +232,7 @@
         <div id="reader-counter" class="rt-counter">1 / 1</div>
         <button id="reader-next" class="rt-btn">Next ›</button>
         <button id="reader-fit" class="rt-btn" title="Cycle fit mode">Fit: Page</button>
+        <button id="reader-fullscreen" class="rt-btn" title="Toggle fullscreen">Fullscreen</button>
       </div>
     </div>
   </section>

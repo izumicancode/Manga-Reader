@@ -54,12 +54,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .tab.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .tab:hover:not(.active) { background: var(--bg-hover); color: var(--text); }
-.topbar-actions { margin-left: auto; -webkit-app-region: no-drag; }
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; -webkit-app-region: no-drag; }
 #search {
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 7px 12px; color: var(--text); font-size: 13px; width: 220px; outline: none;
 }
 #search:focus { border-color: var(--accent); }
+#category-filter {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 10px; color: var(--text); font-size: 13px; outline: none;
+}
+#category-filter:focus { border-color: var(--accent); }
 
 .view { flex: 1; overflow-y: auto; padding: 24px; }
 
@@ -91,6 +96,14 @@ body.no-anim .book-card, body.no-anim .view, body.no-anim .reader-toolbar { tran
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .book-meta { font-size: 11px; color: var(--text-muted); padding: 0 10px 10px; }
+
+@media (max-width: 700px) {
+  .topbar { flex-wrap: wrap; gap: 10px; }
+  .tabs { order: 3; width: 100%; overflow-x: auto; }
+  .topbar-actions { width: 100%; margin-left: 0; }
+  #search, #category-filter { flex: 1; min-width: 0; }
+  .view { padding: 16px; }
+}
 
 .empty-state { text-align: center; padding: 80px 20px; color: var(--text-muted); }
 .empty-state p { margin-bottom: 16px; font-size: 14px; }

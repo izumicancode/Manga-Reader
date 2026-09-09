@@ -6,6 +6,7 @@ const state = {
   currentIndex: 0,
   settings: {},
   fitMode: 'contain',
+  category: 'all',
 };
 
 const ACCENT_PRESETS = ['#e0555a', '#e08a3c', '#d8c445', '#5fb87a', '#4a9fd8', '#8a6fd8', '#d85fa8'];
@@ -157,6 +158,7 @@ async function refreshLibrary() {
     }
   }
   state.books = books;
+  updateCategoryFilter(state.books);
   state.history = await safeInvoke(window.api.getHistory(), {}, 'Could not load reading history.');
   renderLibraryGrid(state.books);
 }
@@ -164,9 +166,11 @@ async function refreshLibrary() {
 function renderLibraryGrid(books, filter = '') {
   const grid = $('#library-grid');
   const empty = $('#empty-state');
-  const filtered = filter
-    ? books.filter((b) => b.title.toLowerCase().includes(filter.toLowerCase()))
-    : books;
+  const filtered = books.filter((book) => {
+    const matchesSearch = !filter || book.title.toLowerCase().includes(filter.toLowerCase());
+    const matchesCategory = state.category === 'all' || (book.category || 'Uncategorized') === state.category;
+    return matchesSearch && matchesCategory;
+  });
 
   if (!books.length) {
     empty.classList.remove('hidden');
@@ -177,6 +181,20 @@ function renderLibraryGrid(books, filter = '') {
   grid.classList.remove('hidden');
   grid.innerHTML = '';
   filtered.forEach((book) => grid.appendChild(bookCard(book)));
+}
+
+function updateCategoryFilter(books) {
+  const select = $('#category-filter');
+  const categories = [...new Set(books.map((book) => book.category || 'Uncategorized'))].sort();
+  select.innerHTML = '<option value="all">All categories</option>';
+  categories.forEach((category) => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    select.appendChild(option);
+  });
+  select.value = categories.includes(state.category) ? state.category : 'all';
+  state.category = select.value;
 }
 
 function bookCard(book) {
@@ -193,7 +211,7 @@ function bookCard(book) {
       ${percent > 0 ? `<div class="progress-bar" style="width:${percent}%"></div>` : ''}
     </div>
     <div class="book-title">${escapeHtml(book.title)}</div>
-    <div class="book-meta">${book.pageCount} page${book.pageCount === 1 ? '' : 's'}${percent ? ` · ${percent}%` : ''}</div>
+    <div class="book-meta">${book.pageCount} page${book.pageCount === 1 ? '' : 's'} · ${escapeHtml(book.category || 'Uncategorized')}${percent ? ` · ${percent}%` : ''}</div>
   `;
 
   // Covers are pre-cached on disk by the main process; we never keep the
@@ -385,12 +403,17 @@ function bindEvents() {
   $$('.tab').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
 
   $('#search').addEventListener('input', (e) => renderLibraryGrid(state.books, e.target.value));
+  $('#category-filter').addEventListener('change', (e) => {
+    state.category = e.target.value;
+    renderLibraryGrid(state.books, $('#search').value);
+  });
 
   $('#pick-folder').addEventListener('click', pickFolder);
   $('#pick-folder-empty').addEventListener('click', pickFolder);
   $('#rescan').addEventListener('click', async () => {
     const res = await safeInvoke(window.api.scanLibrary(), { books: [] }, "Couldn't rescan your library.");
     state.books = res.books || [];
+    updateCategoryFilter(state.books);
     renderLibraryGrid(state.books);
     if (res.skipped && res.skipped.length) showToast(`Skipped ${res.skipped.length} file(s) that couldn't be read.`);
   });
@@ -440,13 +463,30 @@ function bindEvents() {
   $('#reader-next').addEventListener('click', () => turnPage('next'));
   $('#reader-prev').addEventListener('click', () => turnPage('prev'));
   $('#reader-fit').addEventListener('click', cycleFitMode);
+  $('#reader-fullscreen').addEventListener('click', async () => {
+    const isFullscreen = await safeInvoke(window.api.toggleFullscreen(), false, "Couldn't toggle fullscreen.");
+    $('#reader-fullscreen').textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+  });
+  $('#clear-history').addEventListener('click', async () => {
+    if (!confirm('Clear all reading history?')) return;
+    const ok = await safeInvoke(window.api.clearHistory(), false, "Couldn't clear reading history.");
+    if (ok) {
+      state.history = {};
+      renderLibraryGrid(state.books, $('#search').value);
+      refreshHistory();
+      showToast('Reading history cleared.');
+    }
+  });
 
   document.addEventListener('keydown', (e) => {
     if ($('#reader').classList.contains('hidden')) return;
     const key = e.key.toLowerCase();
     if (key === 'arrowright' || key === 'd') turnPage(state.settings.readingDirection === 'rtl' ? 'prev' : 'next');
     if (key === 'arrowleft' || key === 'a') turnPage(state.settings.readingDirection === 'rtl' ? 'next' : 'prev');
-    if (key === 'f') cycleFitMode();
+    if (key === 'f' && e.ctrlKey && e.shiftKey) {
+      e.preventDefault();
+      $('#reader-fullscreen').click();
+    } else if (key === 'f') cycleFitMode();
     if (e.key === 'Escape') closeReader();
   });
 
@@ -485,6 +525,7 @@ function pickFolder() {
     $('#library-folder-path').textContent = folder;
     const res = await window.api.scanLibrary();
     state.books = res.books;
+    updateCategoryFilter(state.books);
     renderLibraryGrid(state.books);
   });
 }

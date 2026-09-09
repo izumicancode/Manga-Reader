@@ -20,7 +20,8 @@ function initStores() {
   historyStore = new Store({ name: 'history' });
 }
 
-const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp']);
+const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif']);
+const ARCHIVE_EXT = new Set(['.cbz', '.zip']);
 const thumbDir = () => {
   const dir = path.join(app.getPath('userData'), 'thumbnails');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -31,19 +32,48 @@ function hashId(str) {
   return crypto.createHash('sha256').update(str).digest('hex').slice(0, 16);
 }
 
-function findCbzFiles(rootDir) {
+function findLibrarySources(rootDir) {
   const results = [];
   function walk(dir) {
     let entries;
     try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
     for (const entry of entries) {
       const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.isFile() && entry.name.toLowerCase().endsWith('.cbz')) results.push(full);
+      if (entry.isDirectory()) {
+        const childEntries = (() => { try { return fs.readdirSync(full, { withFileTypes: true }); } catch { return []; } })();
+        const hasImages = childEntries.some(child => child.isFile() && IMAGE_EXT.has(path.extname(child.name).toLowerCase()));
+        if (hasImages) results.push(full);
+        else walk(full);
+      } else if (entry.isFile() && (ARCHIVE_EXT.has(path.extname(entry.name).toLowerCase()) || IMAGE_EXT.has(path.extname(entry.name).toLowerCase()))) {
+        results.push(full);
+      }
     }
   }
   walk(rootDir);
   return results;
+}
+
+function sourceType(filePath) {
+  if (fs.statSync(filePath).isDirectory()) return 'folder';
+  const ext = path.extname(filePath).toLowerCase();
+  if (IMAGE_EXT.has(ext)) return 'image';
+  if (ARCHIVE_EXT.has(ext)) return 'archive';
+  return null;
+}
+
+function cleanTitle(value) {
+  return value.replace(/[._]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function displayTitle(filePath, rootDir, type) {
+  if (type === 'folder') return cleanTitle(path.basename(filePath));
+  const parent = path.dirname(filePath);
+  return cleanTitle(parent !== rootDir ? path.basename(parent) : path.basename(filePath, path.extname(filePath)));
+}
+
+function categoryFor(filePath, rootDir) {
+  const relative = path.relative(rootDir, filePath).split(path.sep).filter(Boolean);
+  return relative.length > 1 ? cleanTitle(relative[0]) : 'Uncategorized';
 }
 
 function sortedImageEntries(zip) {
@@ -52,12 +82,37 @@ function sortedImageEntries(zip) {
     .sort((a, b) => a.entryName.localeCompare(b.entryName, undefined, { numeric: true }));
 }
 
+function sortedFolderImages(folderPath) {
+  return fs.readdirSync(folderPath)
+    .filter(name => IMAGE_EXT.has(path.extname(name).toLowerCase()))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
+function sourcePages(filePath, type) {
+  if (type === 'folder') return sortedFolderImages(filePath);
+  if (type === 'image') return [path.basename(filePath)];
+  const zip = new AdmZip(filePath);
+  return sortedImageEntries(zip).map(entry => entry.entryName);
+}
+
 // Determines the correct file extension for a cached cover, since the source
 // image inside the zip might be png/webp/etc, not always jpg.
 function extractCoverToCache(filePath, id) {
   const existing = fs.readdirSync(thumbDir()).find(f => f.startsWith(id + '.'));
   if (existing) return path.join(thumbDir(), existing);
   try {
+    const type = sourceType(filePath);
+    if (type === 'image') {
+      fs.copyFileSync(filePath, path.join(thumbDir(), `${id}${path.extname(filePath).toLowerCase()}`));
+      return path.join(thumbDir(), `${id}${path.extname(filePath).toLowerCase()}`);
+    }
+    if (type === 'folder') {
+      const first = sortedFolderImages(filePath)[0];
+      if (!first) return null;
+      const outPath = path.join(thumbDir(), `${id}${path.extname(first).toLowerCase()}`);
+      fs.copyFileSync(path.join(filePath, first), outPath);
+      return outPath;
+    }
     const zip = new AdmZip(filePath);
     const images = sortedImageEntries(zip);
     if (!images.length) return null;
@@ -73,8 +128,7 @@ function extractCoverToCache(filePath, id) {
 
 function countPages(filePath) {
   try {
-    const zip = new AdmZip(filePath);
-    return sortedImageEntries(zip).length;
+    return sourcePages(filePath, sourceType(filePath)).length;
   } catch { return 0; }
 }
 
@@ -141,7 +195,7 @@ ipcMain.handle('scan-library', async () => {
   const folder = store.get('libraryFolder');
   if (!folder || !fs.existsSync(folder)) return { books: [], error: 'no-folder' };
 
-  const files = findCbzFiles(folder);
+  const files = findLibrarySources(folder);
   const existing = libraryStore.get('books', {});
   const books = {};
   const failed = [];
@@ -153,7 +207,9 @@ ipcMain.handle('scan-library', async () => {
       const prev = existing[id];
       const needsRescan = !prev || prev.mtimeMs !== stat.mtimeMs;
 
-      const title = path.basename(filePath, '.cbz').replace(/[._]+/g, ' ').trim();
+      const type = sourceType(filePath);
+      const title = displayTitle(filePath, folder, type);
+      const category = categoryFor(filePath, folder);
       const cover = extractCoverToCache(filePath, id);
       const pageCount = needsRescan ? countPages(filePath) : prev.pageCount;
 
@@ -161,7 +217,7 @@ ipcMain.handle('scan-library', async () => {
       // the library instead of showing a permanently-broken card.
       if (pageCount === 0) { failed.push(filePath); continue; }
 
-      books[id] = { id, title, filePath, cover, pageCount, mtimeMs: stat.mtimeMs, sizeBytes: stat.size };
+      books[id] = { id, title, category, type, filePath, cover, pageCount, mtimeMs: stat.mtimeMs, sizeBytes: stat.size };
     } catch (err) {
       console.error('Skipping unreadable file', filePath, err.message);
       failed.push(filePath);
@@ -196,8 +252,7 @@ ipcMain.handle('open-book', (e, bookId) => {
   try {
     const book = libraryStore.get(`books.${bookId}`);
     if (!book || !fs.existsSync(book.filePath)) return { error: 'missing-file' };
-    const zip = new AdmZip(book.filePath);
-    const pages = sortedImageEntries(zip).map(en => en.entryName);
+    const pages = sourcePages(book.filePath, book.type || sourceType(book.filePath));
     if (!pages.length) return { error: 'no-pages' };
     const hist = historyStore.get(bookId, { page: 0, percent: 0 });
     const resumePage = Math.min(hist.page || 0, pages.length - 1);
@@ -212,10 +267,18 @@ ipcMain.handle('get-page', (e, bookId, pageName) => {
   try {
     const book = libraryStore.get(`books.${bookId}`);
     if (!book) return null;
-    const zip = new AdmZip(book.filePath);
-    const entry = zip.getEntry(pageName);
-    if (!entry) return null;
-    const buf = entry.getData();
+    const type = book.type || sourceType(book.filePath);
+    let buf;
+    if (type === 'folder' || type === 'image') {
+      const imagePath = type === 'image' ? book.filePath : path.join(book.filePath, pageName);
+      if (!fs.existsSync(imagePath)) return null;
+      buf = fs.readFileSync(imagePath);
+    } else {
+      const zip = new AdmZip(book.filePath);
+      const entry = zip.getEntry(pageName);
+      if (!entry) return null;
+      buf = entry.getData();
+    }
     const ext = path.extname(pageName).toLowerCase().replace('.', '') || 'jpeg';
     const mime = ext === 'jpg' ? 'jpeg' : ext;
     return `data:image/${mime};base64,${buf.toString('base64')}`;
@@ -237,6 +300,17 @@ ipcMain.handle('save-progress', (e, bookId, page, percent) => {
 
 ipcMain.handle('get-history', () => {
   try { return historyStore.store; } catch { return {}; }
+});
+
+ipcMain.handle('clear-history', () => {
+  try { historyStore.clear(); return true; } catch (err) { console.error('clear-history failed', err.message); return false; }
+});
+
+ipcMain.handle('toggle-fullscreen', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return false;
+  win.setFullScreen(!win.isFullScreen());
+  return win.isFullScreen();
 });
 
 // ---------- IPC: PIN security ----------
