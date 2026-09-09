@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "A cross-platform desktop app to organize and read your local manga collection.",
   "main": "main.js",
-  "author": "You",
+  "author": {
+    "name": "Izumi",
+    "email": "izumicancode@users.noreply.github.com"
+  },
   "license": "MIT",
   "scripts": {
     "start": "electron .",
