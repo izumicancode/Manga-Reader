@@ -82,6 +82,8 @@ function applyAppearance(settings) {
   document.body.dataset.readingDirection = direction;
   document.documentElement.style.setProperty('--accent', accent);
   document.documentElement.style.setProperty('--accent-soft', accent + '22');
+  document.body.style.setProperty('--accent', accent);
+  document.body.style.setProperty('--accent-soft', accent + '22');
   const cardMinMap = { small: '120px', medium: '160px', large: '210px' };
   document.documentElement.style.setProperty('--card-min', cardMinMap[settings.cardSize] || cardMinMap.medium);
   document.body.classList.toggle('no-anim', settings.animationsEnabled === false);
@@ -374,10 +376,20 @@ function renderAccentSwatches(activeColor) {
 // updates in-memory state, and re-applies appearance so the change is
 // visible immediately without a restart.
 async function updateSetting(key, value) {
-  const ok = await safeInvoke(window.api.setSetting(key, value), false, "Couldn't save that setting.");
-  if (!ok) return;
-  state.settings[key] = value;
-  applyAppearance(state.settings);
+  updateSetting.queue = updateSetting.queue || Promise.resolve();
+  const previous = state.settings[key];
+  updateSetting.queue = updateSetting.queue.catch(() => {}).then(async () => {
+    const ok = await safeInvoke(window.api.setSetting(key, value), false, "Couldn't save that setting.");
+    if (!ok) {
+      state.settings[key] = previous;
+      updateSettingsUI(state.settings);
+      return false;
+    }
+    state.settings[key] = value;
+    applyAppearance(state.settings);
+    return true;
+  });
+  await updateSetting.queue.catch(() => {});
 }
 
 // ---------- Tabs ----------
@@ -428,7 +440,7 @@ function bindEvents() {
     });
   });
 
-  $('#accent-custom').addEventListener('input', (e) => updateSetting('accentColor', e.target.value));
+  $('#accent-custom').addEventListener('change', (e) => updateSetting('accentColor', e.target.value));
 
   $('#animations-toggle').addEventListener('change', (e) => updateSetting('animationsEnabled', e.target.checked));
 
@@ -469,14 +481,12 @@ function bindEvents() {
     $('#reader-fullscreen').textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
   });
   $('#clear-history').addEventListener('click', async () => {
-    if (!confirm('Clear all reading history?')) return;
-    const ok = await safeInvoke(window.api.clearHistory(), false, "Couldn't clear reading history.");
-    if (ok) {
-      state.history = {};
-      renderLibraryGrid(state.books, $('#search').value);
-      refreshHistory();
-      showToast('Reading history cleared.');
-    }
+    state.history = {};
+    renderLibraryGrid(state.books, $('#search').value);
+    $('#history-grid').innerHTML = '';
+    $('#history-grid').classList.add('hidden');
+    $('#history-empty').classList.remove('hidden');
+    window.api.clearHistory().catch((err) => console.error('[history] clear failed:', err));
   });
 
   document.addEventListener('keydown', (e) => {

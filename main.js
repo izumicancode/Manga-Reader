@@ -307,7 +307,14 @@ ipcMain.handle('get-history', () => {
 });
 
 ipcMain.handle('clear-history', () => {
-  try { historyStore.clear(); return true; } catch (err) { console.error('clear-history failed', err.message); return false; }
+  try {
+    if (!historyStore) return false;
+    historyStore.clear();
+    return Object.keys(historyStore.store).length === 0;
+  } catch (err) {
+    console.error('clear-history failed', err.message);
+    return false;
+  }
 });
 
 ipcMain.handle('toggle-fullscreen', (event) => {
