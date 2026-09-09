@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline';" />
+<title>Manga Library</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body data-theme="dark">
+
+  <!-- Lock screen -->
+  <section id="lock-screen" class="view hidden">
+    <div class="lock-card">
+      <div class="lock-icon">📕</div>
+      <h1>Enter PIN</h1>
+      <div id="pin-dots" class="pin-dots"></div>
+      <div id="pin-error" class="pin-error hidden">Incorrect PIN</div>
+      <div class="pin-pad">
+        <button class="pin-key" data-key="1">1</button>
+        <button class="pin-key" data-key="2">2</button>
+        <button class="pin-key" data-key="3">3</button>
+        <button class="pin-key" data-key="4">4</button>
+        <button class="pin-key" data-key="5">5</button>
+        <button class="pin-key" data-key="6">6</button>
+        <button class="pin-key" data-key="7">7</button>
+        <button class="pin-key" data-key="8">8</button>
+        <button class="pin-key" data-key="9">9</button>
+        <button class="pin-key ghost" data-key="clear">Clear</button>
+        <button class="pin-key" data-key="0">0</button>
+        <button class="pin-key ghost" data-key="back">⌫</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main app -->
+  <div id="app" class="hidden">
+    <header class="topbar">
+      <div class="brand">📚 Manga Library</div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="library">Library</button>
+        <button class="tab" data-tab="history">Continue Reading</button>
+        <button class="tab" data-tab="settings">Settings</button>
+      </nav>
+      <div class="topbar-actions">
+        <input id="search" type="text" placeholder="Search titles…" />
+      </div>
+    </header>
+
+    <main id="view-library" class="view">
+      <div id="empty-state" class="empty-state hidden">
+        <p>No manga found yet.</p>
+        <button id="pick-folder-empty" class="btn primary">Choose Library Folder</button>
+      </div>
+      <div id="library-grid" class="grid"></div>
+    </main>
+
+    <main id="view-history" class="view hidden">
+      <div id="history-grid" class="grid"></div>
+      <div id="history-empty" class="empty-state hidden"><p>You haven't started reading anything yet.</p></div>
+    </main>
+
+    <main id="view-settings" class="view hidden">
+      <div class="settings-groups">
+        <section class="settings-card">
+          <h2>Library</h2>
+          <div class="row">
+            <div>
+              <div class="row-title">Library Folder</div>
+              <div id="library-folder-path" class="row-sub">Not set</div>
+            </div>
+            <button id="pick-folder" class="btn">Change…</button>
+          </div>
+          <div class="row">
+            <div class="row-title">Rescan for new files</div>
+            <button id="rescan" class="btn">Rescan Now</button>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <h2>Appearance</h2>
+          <div class="row">
+            <div class="row-title">Theme</div>
+            <div class="segmented" data-setting="theme">
+              <button class="seg-btn" data-value="dark">Dark</button>
+              <button class="seg-btn" data-value="light">Light</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-title">Accent Color</div>
+            <div class="accent-picker">
+              <div class="swatches" id="accent-swatches"></div>
+              <input type="color" id="accent-custom" title="Custom color" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-title">Cover Size</div>
+            <div class="segmented" data-setting="cardSize">
+              <button class="seg-btn" data-value="small">Small</button>
+              <button class="seg-btn" data-value="medium">Medium</button>
+              <button class="seg-btn" data-value="large">Large</button>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="row-title">Animations</div>
+              <div class="row-sub">Hover motion and view transitions.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="animations-toggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <h2>Reading</h2>
+          <div class="row">
+            <div>
+              <div class="row-title">Reading Direction</div>
+              <div class="row-sub">Right-to-left matches traditional manga page order.</div>
+            </div>
+            <div class="segmented" data-setting="readingDirection">
+              <button class="seg-btn" data-value="ltr">Left → Right</button>
+              <button class="seg-btn" data-value="rtl">Right → Left</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-title">Default Page Fit</div>
+            <div class="segmented" data-setting="defaultFit">
+              <button class="seg-btn" data-value="contain">Fit Page</button>
+              <button class="seg-btn" data-value="width">Fit Width</button>
+              <button class="seg-btn" data-value="height">Fit Height</button>
+              <button class="seg-btn" data-value="original">Original</button>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="row-title">Auto-hide Toolbar</div>
+              <div class="row-sub">Hide reader controls after a few seconds of inactivity.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toolbar-autohide-toggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="row" id="toolbar-delay-row">
+            <div class="row-title">Auto-hide Delay</div>
+            <div class="delay-control">
+              <input type="range" id="toolbar-delay" min="1000" max="6000" step="500" />
+              <span id="toolbar-delay-label" class="row-sub">2.5s</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <h2>Security</h2>
+          <div class="row">
+            <div>
+              <div class="row-title">PIN Lock</div>
+              <div class="row-sub">Requires a PIN when opening the app. Files on disk are not encrypted.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="pin-toggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <h2>Advanced</h2>
+          <div class="row">
+            <div>
+              <div class="row-title">Reset appearance & reading settings</div>
+              <div class="row-sub">Restores defaults. Does not affect your library, history, or PIN.</div>
+            </div>
+            <button id="reset-settings" class="btn danger">Reset to Defaults</button>
+          </div>
+        </section>
+
+        <section class="settings-card credits-card">
+          <h2>Credits</h2>
+          <div class="credits-row">
+            <div class="credits-avatar">✦</div>
+            <div>
+              <div class="row-title">Built by Izumi</div>
+              <div class="row-sub">Manga Library — designed &amp; developed by Izumi.</div>
+            </div>
+            <button id="github-link" class="btn primary">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+                  0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+                  -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+                  .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+                  -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09
+                  2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
+                  0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2
+                  0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+              </svg>
+              github.com/izumicancode
+            </button>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <h2>About</h2>
+          <div class="row-sub">Manga Library v1.0.0 — reads local .cbz files. No internet connection used.</div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Reader -->
+  <section id="reader" class="reader hidden">
+    <div id="reader-page-wrap" class="reader-page-wrap">
+      <img id="reader-page" class="reader-page" alt="page" />
+    </div>
+    <div class="reader-toolbar">
+      <button id="reader-back" class="rt-btn">← Library</button>
+      <div id="reader-title" class="rt-title">Title</div>
+      <div class="rt-controls">
+        <button id="reader-prev" class="rt-btn">‹ Prev</button>
+        <div id="reader-counter" class="rt-counter">1 / 1</div>
+        <button id="reader-next" class="rt-btn">Next ›</button>
+        <button id="reader-fit" class="rt-btn" title="Cycle fit mode">Fit: Page</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIN setup modal -->
+  <div id="pin-setup-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2 id="pin-setup-title">Set a PIN</h2>
+      <input id="pin-setup-input" type="password" inputmode="numeric" maxlength="6" placeholder="Enter 4–6 digit PIN" />
+      <div class="modal-actions">
+        <button id="pin-setup-cancel" class="btn">Cancel</button>
+        <button id="pin-setup-confirm" class="btn primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
