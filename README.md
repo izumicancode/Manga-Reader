@@ -1,14 +1,17 @@
 # Manga Library
 
-A cross-platform desktop app (Windows / macOS / Linux) for organizing and reading your local `.cbz` manga collection — with a cover-art library grid, "Continue Reading" history, dark/light mode, and an optional PIN lock.
+A cross-platform desktop app (Windows / macOS / Linux) for organizing and reading local manga — with a cover-art library grid, categories, "Continue Reading" history, dark/light mode, and an optional PIN lock.
 
 Built with **Electron**, so it's a real installable desktop app, not a browser tab — see `docs/ARCHITECTURE.md` for why and how.
 
 ## Features
 
-- 📚 **Library view** — auto-scans a folder (and subfolders) for `.cbz` files, shows a cover-art grid with title and page count.
+- 📚 **Library view** — auto-scans a folder (and subfolders) for image folders, standalone images, `.zip`, and `.cbz` files. Folder names are used as manga titles, with the first subfolder used as a category.
 - 📖 **Built-in reader** — click a book to read; arrow keys / A-D to page, `F` to cycle fit mode, Esc to exit.
 - ⏱ **History / Continue Reading** — remembers your last page per book, with a progress bar on each cover.
+- 🗂 **Categories** — filter the library by its containing folder category.
+- 🧹 **Clear history** — remove all saved reading progress from Settings.
+- ⛶ **Fullscreen reader** — use the reader control or `Ctrl+Shift+F`.
 - 🎨 **Fully customizable appearance** — theme, accent color (presets or any custom color), cover size, animation toggle.
 - 📖 **Fully customizable reading** — LTR/RTL reading direction (for traditional manga order), default page fit, toolbar auto-hide on/off with adjustable delay.
 - 🔒 **PIN lock** — optional 4–6 digit PIN gate on app launch (see Security note below).
@@ -42,7 +45,7 @@ npm install
 npm start
 ```
 
-On first launch, click **Choose Library Folder** and select the folder where your `.cbz` files live (subfolders are scanned too). Covers are generated automatically from each archive's first image and cached, so re-opening the app is instant.
+On first launch, click **Choose Library Folder** and select the folder where your manga lives (subfolders are scanned too). Covers are generated automatically from the first image and cached, so re-opening the app is instant.
 
 ## Building an installable app
 

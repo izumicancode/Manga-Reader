@@ -149,13 +149,10 @@ async function handlePinKey(key) {
 // ---------- Library ----------
 
 async function refreshLibrary() {
-  let books = await safeInvoke(window.api.getLibrary(), [], 'Could not load your library.');
-  if (!books.length) {
-    const res = await safeInvoke(window.api.scanLibrary(), { books: [] }, 'Could not scan your library folder.');
-    books = res.books || [];
-    if (res.skipped && res.skipped.length) {
-      showToast(`Skipped ${res.skipped.length} file(s) that couldn't be read.`);
-    }
+  const res = await safeInvoke(window.api.scanLibrary(), null, 'Could not scan your library folder.');
+  let books = res ? res.books || [] : await safeInvoke(window.api.getLibrary(), [], 'Could not load your library.');
+  if (res && res.skipped && res.skipped.length) {
+    showToast(`Skipped ${res.skipped.length} file(s) that couldn't be read.`);
   }
   state.books = books;
   updateCategoryFilter(state.books);
