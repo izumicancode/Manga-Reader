@@ -27,6 +27,8 @@ function initStores() {
 const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif']);
 const ARCHIVE_EXT = new Set(['.cbz', '.zip', '.cbr', '.rar']);
 const rarCache = new Map();
+const archiveEntryCache = new Map();
+const pageBinaryCache = new Map();
 const thumbDir = () => {
   const dir = path.join(app.getPath('userData'), 'thumbnails');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -93,10 +95,29 @@ function sortedFolderImages(folderPath) {
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 }
 
+function cacheKey(filePath) {
+  try {
+    const stat = fs.statSync(filePath);
+    return `${filePath}:${stat.mtimeMs}:${stat.size}`;
+  } catch {
+    return filePath;
+  }
+}
+
+function trimMap(map, maxEntries) {
+  if (map.size <= maxEntries) return;
+  const over = map.size - maxEntries;
+  for (let i = 0; i < over; i++) {
+    const oldestKey = map.keys().next().value;
+    if (oldestKey !== undefined) map.delete(oldestKey);
+  }
+}
+
 async function loadRar(filePath) {
   const stat = fs.statSync(filePath);
-  const cached = rarCache.get(filePath);
-  if (cached && cached.mtimeMs === stat.mtimeMs) return cached;
+  const cacheKeyForFile = `${filePath}:${stat.mtimeMs}:${stat.size}`;
+  const cached = rarCache.get(cacheKeyForFile);
+  if (cached) return cached;
 
   const data = Uint8Array.from(fs.readFileSync(filePath)).buffer;
   const extractor = await unrar.createExtractorFromData({ data });
@@ -107,8 +128,25 @@ async function loadRar(filePath) {
   const content = new Map();
   for (const file of extracted.files) content.set(file.fileHeader.name, Buffer.from(file.extraction));
   const result = { mtimeMs: stat.mtimeMs, pages: headers.map(header => header.name), content };
-  rarCache.set(filePath, result);
+  rarCache.set(cacheKeyForFile, result);
+  trimMap(rarCache, 12);
   return result;
+}
+
+function getZipEntryMap(filePath) {
+  const key = cacheKey(filePath);
+  const cached = archiveEntryCache.get(key);
+  if (cached) return cached;
+
+  const zip = new AdmZip(filePath);
+  const entries = new Map(
+    zip.getEntries()
+      .filter(e => !e.isDirectory && IMAGE_EXT.has(path.extname(e.entryName).toLowerCase()))
+      .map(entry => [entry.entryName, entry])
+  );
+  archiveEntryCache.set(key, entries);
+  trimMap(archiveEntryCache, 16);
+  return entries;
 }
 
 async function sourcePages(filePath, type) {
@@ -117,11 +155,7 @@ async function sourcePages(filePath, type) {
   if (ARCHIVE_EXT.has(path.extname(filePath).toLowerCase()) && ['.cbr', '.rar'].includes(path.extname(filePath).toLowerCase())) {
     return (await loadRar(filePath)).pages;
   }
-  const zip = new AdmZip(filePath);
-  return sortedImageEntries(zip).map(entry => entry.entryName);
-}
-
-// Determines the correct file extension for a cached cover, since the source
+    return [...getZipEntryMap(filePath).keys()];
 // image inside the zip might be png/webp/etc, not always jpg.
 async function extractCoverToCache(filePath, id) {
   const existing = fs.readdirSync(thumbDir()).find(f => f.startsWith(id + '-cover.'));
@@ -320,6 +354,14 @@ ipcMain.handle('get-page', async (e, bookId, pageName) => {
     const book = libraryStore.get(`books.${bookId}`);
     if (!book) return null;
     const type = book.type || sourceType(book.filePath);
+    const cacheKeyForPage = `${book.filePath}:${pageName}:${book.mtimeMs || '0'}`;
+    const cached = pageBinaryCache.get(cacheKeyForPage);
+    if (cached) {
+      const ext = path.extname(pageName).toLowerCase().replace('.', '') || 'jpeg';
+      const mime = ext === 'jpg' ? 'jpeg' : ext;
+      return `data:image/${mime};base64,${cached.toString('base64')}`;
+    }
+
     let buf;
     if (type === 'folder' || type === 'image') {
       const imagePath = type === 'image' ? book.filePath : path.join(book.filePath, pageName);
@@ -329,13 +371,14 @@ ipcMain.handle('get-page', async (e, bookId, pageName) => {
       buf = (await loadRar(book.filePath)).content.get(pageName);
       if (!buf) return null;
     } else {
-      const zip = new AdmZip(book.filePath);
-      const entry = zip.getEntry(pageName);
+      const entry = getZipEntryMap(book.filePath).get(pageName);
       if (!entry) return null;
       buf = entry.getData();
     }
-    const ext = path.extname(pageName).toLowerCase().replace('.', '') || 'jpeg';
-    const mime = ext === 'jpg' ? 'jpeg' : ext;
+
+    if (buf) pageBinaryCache.set(cacheKeyForPage, buf);
+    trimMap(pageBinaryCache, 256);
+
     return `data:image/${mime};base64,${buf.toString('base64')}`;
   } catch (err) {
     console.error('get-page failed', err.message);

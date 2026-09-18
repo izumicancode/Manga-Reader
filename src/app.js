@@ -315,23 +315,30 @@ async function openReader(bookId) {
   await renderCurrentPage();
 }
 
+let pageRenderToken = 0;
+
 async function renderCurrentPage() {
   const { currentBook, currentPages, currentIndex } = state;
   if (!currentBook || !currentPages.length) return;
-  const src = await safeInvoke(
-    window.api.getPage(currentBook.id, currentPages[currentIndex]),
-    null,
-    "Couldn't load this page."
-  );
+
+  const renderToken = ++pageRenderToken;
+  const pageName = currentPages[currentIndex];
+  const secondaryName = state.spread && currentIndex < currentPages.length - 1 ? currentPages[currentIndex + 1] : null;
+
+  const src = await safeInvoke(window.api.getPage(currentBook.id, pageName), null, "Couldn't load this page.");
+  if (renderToken !== pageRenderToken) return;
   if (src) $('#reader-page').src = src;
+
   const secondary = $('#reader-page-secondary');
-  if (state.spread && currentIndex < currentPages.length - 1) {
-    const secondSrc = await safeInvoke(window.api.getPage(currentBook.id, currentPages[currentIndex + 1]), null, "Couldn't load the second page.");
+  if (secondaryName) {
+    const secondSrc = await safeInvoke(window.api.getPage(currentBook.id, secondaryName), null, "Couldn't load the second page.");
+    if (renderToken !== pageRenderToken) return;
     if (secondSrc) secondary.src = secondSrc;
     secondary.classList.remove('hidden');
   } else {
     secondary.classList.add('hidden');
   }
+
   $('#reader-counter').textContent = `${currentIndex + 1} / ${currentPages.length}`;
   const percent = (currentIndex + 1) / currentPages.length;
   await safeInvoke(window.api.saveProgress(currentBook.id, currentIndex, percent), false, '');
@@ -446,7 +453,11 @@ function escapeHtml(str) {
 function bindEvents() {
   $$('.tab').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
 
-  $('#search').addEventListener('input', (e) => renderLibraryGrid(state.books, e.target.value));
+  let searchTimer;
+  $('#search').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => renderLibraryGrid(state.books, e.target.value), 80);
+  });
   $('#category-filter').addEventListener('change', (e) => {
     state.category = e.target.value;
     renderLibraryGrid(state.books, $('#search').value);
