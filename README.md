@@ -18,6 +18,7 @@ Built with **Electron**, so it's a real installable desktop app, not a browser t
 - 📖 **Fully customizable reading** — LTR/RTL reading direction (for traditional manga order), default page fit, toolbar auto-hide on/off with adjustable delay.
 - 🔒 **PIN lock** — optional 4–6 digit PIN gate on app launch (see Security note below).
 - 🔎 **Search** — filter your library by title.
+- 🎯 **Quick filters** — narrow the library to unread or favorite titles, with clear empty states when filters find no matches.
 - ↩️ **Reset to defaults** — one click restores appearance/reading settings without touching your library or history.
 - 100% offline — no account, no internet connection required.
 ## Customization

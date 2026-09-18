@@ -304,6 +304,7 @@ body.no-anim .book-card, body.no-anim .view, body.no-anim .reader-toolbar {
   .tabs { order: 3; width: 100%; overflow-x: auto; }
   .topbar-actions { width: 100%; margin-left: 0; }
   #search, #category-filter, #sort-filter { flex: 1; min-width: 0; }
+  #status-filter { flex: 1; min-width: 0; }
   .view { padding: 16px; }
 }
 
@@ -313,9 +314,31 @@ body.no-anim .book-card, body.no-anim .view, body.no-anim .reader-toolbar {
   color: var(--text-muted);
 }
 
+.empty-state-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  font-size: 24px;
+}
+
+.empty-state h1 {
+  color: var(--text);
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
 .empty-state p {
   margin-bottom: 18px;
   font-size: 14px;
+  line-height: 1.6;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ---------- Buttons ---------- */

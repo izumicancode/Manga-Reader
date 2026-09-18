@@ -7,6 +7,7 @@ const state = {
   settings: {},
   fitMode: 'contain',
   category: 'all',
+  status: 'all',
   sort: 'title',
   zoom: 1,
   spread: false,
@@ -184,7 +185,10 @@ function renderLibraryGrid(books, filter = '') {
   const filtered = books.filter((book) => {
     const matchesSearch = !filter || book.title.toLowerCase().includes(filter.toLowerCase());
     const matchesCategory = state.category === 'all' || (book.category || 'Uncategorized') === state.category;
-    return matchesSearch && matchesCategory;
+    const matchesStatus = state.status === 'all'
+      || (state.status === 'favorites' && book.favorite)
+      || (state.status === 'unread' && !state.history[book.id]);
+    return matchesSearch && matchesCategory && matchesStatus;
   }).sort((a, b) => {
     if (state.sort === 'favorites') return Number(b.favorite) - Number(a.favorite) || a.title.localeCompare(b.title);
     if (state.sort === 'progress') return (state.history[b.id]?.percent || 0) - (state.history[a.id]?.percent || 0);
@@ -192,9 +196,15 @@ function renderLibraryGrid(books, filter = '') {
     return a.title.localeCompare(b.title, undefined, { numeric: true });
   });
 
-  if (!books.length) {
+  if (!books.length || !filtered.length) {
     empty.classList.remove('hidden');
     grid.classList.add('hidden');
+    const hasLibrary = books.length > 0;
+    $('#empty-state-title').textContent = hasLibrary ? 'No titles match these filters' : 'Your library is ready';
+    $('#empty-state-message').textContent = hasLibrary
+      ? 'Try a different search, category, or reading status.'
+      : 'Choose the folder that contains your manga. Subfolders and ZIP, CBZ, RAR, and CBR files are supported.';
+    $('#pick-folder-empty').classList.toggle('hidden', hasLibrary);
     return;
   }
   empty.classList.add('hidden');
@@ -469,6 +479,10 @@ function bindEvents() {
   });
   $('#category-filter').addEventListener('change', (e) => {
     state.category = e.target.value;
+    renderLibraryGrid(state.books, $('#search').value);
+  });
+  $('#status-filter').addEventListener('change', (e) => {
+    state.status = e.target.value;
     renderLibraryGrid(state.books, $('#search').value);
   });
   $('#sort-filter').addEventListener('change', (e) => {

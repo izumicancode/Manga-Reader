@@ -47,6 +47,11 @@
         <select id="category-filter" aria-label="Filter by category">
           <option value="all">All categories</option>
         </select>
+        <select id="status-filter" aria-label="Filter by reading status">
+          <option value="all">All titles</option>
+          <option value="unread">Unread</option>
+          <option value="favorites">Favorites</option>
+        </select>
         <select id="sort-filter" aria-label="Sort library">
           <option value="title">Title</option>
           <option value="recent">Recently read</option>
@@ -58,7 +63,9 @@
 
     <main id="view-library" class="view">
       <div id="empty-state" class="empty-state hidden">
-        <p>No manga found yet.</p>
+        <div class="empty-state-icon">📚</div>
+        <h1 id="empty-state-title">Your library is ready</h1>
+        <p id="empty-state-message">Choose the folder that contains your manga. Subfolders and ZIP, CBZ, RAR, and CBR files are supported.</p>
         <button id="pick-folder-empty" class="btn primary">Choose Library Folder</button>
       </div>
       <div id="library-grid" class="grid"></div>
