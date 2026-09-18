@@ -96,6 +96,31 @@ input, select {
   letter-spacing: -0.02em;
 }
 
+.library-status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.library-status[data-tone="active"] {
+  color: var(--accent);
+  border-color: rgba(255, 107, 87, 0.3);
+  background: var(--accent-soft);
+}
+
+.library-status[data-tone="success"] {
+  color: var(--success);
+  border-color: rgba(70, 195, 138, 0.25);
+  background: rgba(70, 195, 138, 0.08);
+}
+
 .tabs {
   display: flex;
   gap: 6px;
@@ -173,6 +198,7 @@ input, select {
   background: var(--bg-elevated);
   box-shadow: 0 12px 28px var(--shadow);
   cursor: pointer;
+  will-change: transform;
   transition: transform var(--anim-fast) ease, border-color var(--anim-fast) ease, box-shadow var(--anim-fast) ease;
 }
 
@@ -497,6 +523,8 @@ body.no-anim .book-card, body.no-anim .view, body.no-anim .reader-toolbar {
   object-fit: contain;
   user-select: none;
   border-radius: 2px;
+  opacity: 1;
+  transition: opacity 160ms ease, transform 180ms ease;
 }
 .reader-page.fit-width { width: 100%; height: auto; max-height: none; }
 .reader-page.fit-height { height: 100%; width: auto; max-width: none; }

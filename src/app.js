@@ -49,6 +49,13 @@ function showToast(message) {
   showToast._t = setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
+function updateLibraryStatus(message, tone = 'neutral') {
+  const el = $('#library-status');
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.tone = tone;
+}
+
 // ---------- Boot ----------
 
 async function boot() {
@@ -158,6 +165,7 @@ async function handlePinKey(key) {
 // ---------- Library ----------
 
 async function refreshLibrary() {
+  updateLibraryStatus('Scanning library…', 'active');
   const res = await safeInvoke(window.api.scanLibrary(), null, 'Could not scan your library folder.');
   let books = res ? res.books || [] : await safeInvoke(window.api.getLibrary(), [], 'Could not load your library.');
   if (res && res.skipped && res.skipped.length) {
@@ -167,6 +175,7 @@ async function refreshLibrary() {
   updateCategoryFilter(state.books);
   state.history = await safeInvoke(window.api.getHistory(), {}, 'Could not load reading history.');
   renderLibraryGrid(state.books);
+  updateLibraryStatus(`${books.length} titles loaded`, books.length ? 'success' : 'neutral');
 }
 
 function renderLibraryGrid(books, filter = '') {
@@ -470,12 +479,14 @@ function bindEvents() {
   $('#pick-folder').addEventListener('click', pickFolder);
   $('#pick-folder-empty').addEventListener('click', pickFolder);
   $('#rescan').addEventListener('click', async () => {
+    updateLibraryStatus('Rescanning…', 'active');
     const res = await safeInvoke(window.api.scanLibrary(), null, "Couldn't rescan your library.");
     if (!res) return;
     state.books = res.books || [];
     updateCategoryFilter(state.books);
     renderLibraryGrid(state.books);
     if (res.skipped && res.skipped.length) showToast(`Skipped ${res.skipped.length} file(s) that couldn't be read.`);
+    updateLibraryStatus(`${state.books.length} titles loaded`, state.books.length ? 'success' : 'neutral');
   });
 
   // Every segmented control (theme, cover size, reading direction, fit mode)
@@ -623,6 +634,7 @@ function changeZoom(delta) {
 function pickFolder() {
   safeInvoke(window.api.chooseLibraryFolder(), null, "Couldn't choose a library folder.").then(async (folder) => {
     if (!folder) return;
+    updateLibraryStatus('Scanning selected folder…', 'active');
     const res = await safeInvoke(window.api.scanLibrary(), null, "Couldn't scan the selected library folder.");
     if (!res) return;
     $('#library-folder-path').textContent = folder;
@@ -630,6 +642,7 @@ function pickFolder() {
     updateCategoryFilter(state.books);
     renderLibraryGrid(state.books, $('#search').value);
     if (res.skipped && res.skipped.length) showToast(`Skipped ${res.skipped.length} file(s) that couldn't be read.`);
+    updateLibraryStatus(`${state.books.length} titles loaded`, state.books.length ? 'success' : 'neutral');
   });
 }
 
