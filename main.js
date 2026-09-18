@@ -155,7 +155,9 @@ async function sourcePages(filePath, type) {
   if (ARCHIVE_EXT.has(path.extname(filePath).toLowerCase()) && ['.cbr', '.rar'].includes(path.extname(filePath).toLowerCase())) {
     return (await loadRar(filePath)).pages;
   }
-    return [...getZipEntryMap(filePath).keys()];
+  return [...getZipEntryMap(filePath).keys()];
+}
+
 // image inside the zip might be png/webp/etc, not always jpg.
 async function extractCoverToCache(filePath, id) {
   const existing = fs.readdirSync(thumbDir()).find(f => f.startsWith(id + '-cover.'));
