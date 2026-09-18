@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   resetSettings: () => ipcRenderer.invoke('reset-settings'),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   scanLibrary: () => ipcRenderer.invoke('scan-library'),
+  onLibraryChanged: (callback) => ipcRenderer.on('library-changed', callback),
   getLibrary: () => ipcRenderer.invoke('get-library'),
   toggleFavorite: (bookId) => ipcRenderer.invoke('toggle-favorite', bookId),
   getCover: (bookId) => ipcRenderer.invoke('get-cover', bookId),

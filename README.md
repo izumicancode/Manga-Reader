@@ -19,6 +19,7 @@ Built with **Electron**, so it's a real installable desktop app, not a browser t
 - 🔒 **PIN lock** — optional 4–6 digit PIN gate on app launch (see Security note below).
 - 🔎 **Search** — filter your library by title.
 - 🎯 **Quick filters** — narrow the library to unread or favorite titles, with clear empty states when filters find no matches.
+- 🔄 **Automatic updates** — detects added, removed, or changed manga files and refreshes the library automatically.
 - ↩️ **Reset to defaults** — one click restores appearance/reading settings without touching your library or history.
 - 100% offline — no account, no internet connection required.
 ## Customization
@@ -85,9 +86,8 @@ The PIN gates the **app's UI only** — it does not encrypt the `.cbz` files on 
 
 Built by **Izumi** — [github.com/izumicancode](https://github.com/izumicancode)
 
-## Roadmap ideas (not yet built)
+## Roadmap ideas
 
-- CBR/CBR7 (RAR-based) archive support
 - Tagging / collections / custom sort order
-- Double-page spread view for landscape reading
-- Auto-import: watch the library folder for new files instead of manual rescans
+- Chapter navigation between related folders or archives
+- Drag-and-drop importing

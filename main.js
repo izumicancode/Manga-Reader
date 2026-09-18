@@ -18,6 +18,9 @@ process.on('unhandledRejection', (err) => {
 });
 
 let store, libraryStore, historyStore;
+let mainWindow;
+let libraryWatchTimer;
+let lastLibrarySignature = '';
 function initStores() {
   store = new Store({ name: 'config' });
   libraryStore = new Store({ name: 'library' });
@@ -58,6 +61,34 @@ function findLibrarySources(rootDir) {
   }
   walk(rootDir);
   return results;
+}
+
+function librarySignature(rootDir) {
+  return findLibrarySources(rootDir).map((filePath) => {
+    try {
+      const stat = fs.statSync(filePath);
+      return `${filePath}:${stat.mtimeMs}:${stat.size}`;
+    } catch {
+      return `${filePath}:missing`;
+    }
+  }).sort().join('|');
+}
+
+function startLibraryWatcher() {
+  clearInterval(libraryWatchTimer);
+  lastLibrarySignature = '';
+  libraryWatchTimer = setInterval(() => {
+    const folder = store && store.get('libraryFolder');
+    if (!folder || !fs.existsSync(folder)) return;
+    const signature = librarySignature(folder);
+    if (!lastLibrarySignature) {
+      lastLibrarySignature = signature;
+      return;
+    }
+    if (signature === lastLibrarySignature) return;
+    lastLibrarySignature = signature;
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('library-changed');
+  }, 5000);
 }
 
 function sourceType(filePath) {
@@ -210,6 +241,7 @@ ipcMain.handle('choose-library-folder', async () => {
   if (res.canceled || !res.filePaths.length) return null;
   const folder = res.filePaths[0];
   store.set('libraryFolder', folder);
+  startLibraryWatcher();
   return folder;
 });
 
@@ -505,6 +537,7 @@ function createWindow() {
   });
 
   win.loadFile(path.join(__dirname, 'src', 'index.html'));
+  mainWindow = win;
   return win;
 }
 
@@ -515,7 +548,9 @@ app.whenReady().then(() => {
     console.error('[main] failed to init stores:', err);
   }
   createWindow();
+  startLibraryWatcher();
 });
 
+app.on('before-quit', () => clearInterval(libraryWatchTimer));
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

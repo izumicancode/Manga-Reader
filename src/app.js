@@ -116,6 +116,10 @@ async function enterApp(settings) {
   await refreshLibrary();
   await refreshHistory();
   bindEvents();
+  window.api.onLibraryChanged(() => {
+    showToast('Library changes detected. Refreshing…');
+    refreshLibrary();
+  });
 }
 
 // ---------- Lock screen ----------
