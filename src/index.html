@@ -35,15 +35,13 @@
   <!-- Main app -->
   <div id="app" class="hidden">
     <header class="topbar">
-      <div class="topbar-main">
-        <div class="brand"><span class="brand-mark">📚</span> Manga Library</div>
-        <div id="library-status" class="library-status" data-tone="neutral">Ready</div>
-        <nav class="tabs" aria-label="Main navigation">
-          <button class="tab active" data-tab="library">Library</button>
-          <button class="tab" data-tab="history">Continue Reading</button>
-          <button class="tab" data-tab="settings">Settings</button>
-        </nav>
-      </div>
+      <div class="brand">📚 Manga Library</div>
+      <div id="library-status" class="library-status" data-tone="neutral">Ready</div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="library">Library</button>
+        <button class="tab" data-tab="history">Continue Reading</button>
+        <button class="tab" data-tab="settings">Settings</button>
+      </nav>
       <div class="topbar-actions">
         <input id="search" type="text" placeholder="Search titles…" />
         <select id="category-filter" aria-label="Filter by category">
@@ -124,15 +122,6 @@
               <button class="seg-btn" data-value="small">Small</button>
               <button class="seg-btn" data-value="medium">Medium</button>
               <button class="seg-btn" data-value="large">Large</button>
-            </div>
-          </div>
-          <div class="row">
-            <div>
-              <div class="row-title">Books per row</div>
-              <div class="row-sub">Choose how many covers fit across the library grid.</div>
-            </div>
-            <div class="number-control">
-              <input id="book-columns" type="number" min="1" max="12" step="1" inputmode="numeric" />
             </div>
           </div>
           <div class="row">
