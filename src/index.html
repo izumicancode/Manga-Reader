@@ -35,29 +35,46 @@
   <!-- Main app -->
   <div id="app" class="hidden">
     <header class="topbar">
-      <div class="brand">📚 Manga Library</div>
-      <div id="library-status" class="library-status" data-tone="neutral">Ready</div>
-      <nav class="tabs">
-        <button class="tab active" data-tab="library">Library</button>
-        <button class="tab" data-tab="history">Continue Reading</button>
-        <button class="tab" data-tab="settings">Settings</button>
-      </nav>
-      <div class="topbar-actions">
-        <input id="search" type="text" placeholder="Search titles…" />
-        <select id="category-filter" aria-label="Filter by category">
-          <option value="all">All categories</option>
-        </select>
-        <select id="status-filter" aria-label="Filter by reading status">
-          <option value="all">All titles</option>
-          <option value="unread">Unread</option>
-          <option value="favorites">Favorites</option>
-        </select>
-        <select id="sort-filter" aria-label="Sort library">
-          <option value="title">Title</option>
-          <option value="recent">Recently read</option>
-          <option value="progress">Progress</option>
-          <option value="favorites">Favorites</option>
-        </select>
+      <div class="topbar-shell">
+        <div class="brand-group">
+          <div class="brand-mark">📚</div>
+          <div class="brand-copy">
+            <span class="brand-name">Manga Library</span>
+            <span class="brand-subtitle">Local collection</span>
+          </div>
+        </div>
+
+        <div id="library-status" class="library-status" data-tone="neutral">Ready</div>
+
+        <nav class="tabs" aria-label="Main navigation">
+          <button class="tab active" data-tab="library">Library</button>
+          <button class="tab" data-tab="history">Continue Reading</button>
+          <button class="tab" data-tab="settings">Settings</button>
+        </nav>
+
+        <div class="topbar-actions">
+          <label class="search-wrap" aria-label="Search titles">
+            <span class="search-icon">⌕</span>
+            <input id="search" type="text" placeholder="Search titles…" />
+          </label>
+
+          <div class="control-group">
+            <select id="category-filter" aria-label="Filter by category">
+              <option value="all">All categories</option>
+            </select>
+            <select id="status-filter" aria-label="Filter by reading status">
+              <option value="all">All titles</option>
+              <option value="unread">Unread</option>
+              <option value="favorites">Favorites</option>
+            </select>
+            <select id="sort-filter" aria-label="Sort library">
+              <option value="title">Title</option>
+              <option value="recent">Recently read</option>
+              <option value="progress">Progress</option>
+              <option value="favorites">Favorites</option>
+            </select>
+          </div>
+        </div>
       </div>
     </header>
 
