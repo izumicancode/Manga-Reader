@@ -524,8 +524,13 @@ function bindEvents() {
     });
   });
 
-  $('#accent-custom').addEventListener('change', (e) => updateSetting('accentColor', e.target.value));
+  $('#accent-custom').addEventListener('input', (e) => updateSetting('accentColor', e.target.value));
 
+  $('#book-columns').addEventListener('input', (e) => {
+    const value = Number.parseInt(e.target.value, 10);
+    if (Number.isNaN(value)) return;
+    updateSetting('libraryColumns', Math.min(Math.max(value, 1), 12));
+  });
   $('#book-columns').addEventListener('change', (e) => {
     const value = Number.parseInt(e.target.value, 10);
     if (Number.isNaN(value)) return;
@@ -536,7 +541,9 @@ function bindEvents() {
 
   $('#toolbar-autohide-toggle').addEventListener('change', (e) => updateSetting('toolbarAutoHide', e.target.checked));
   $('#toolbar-delay').addEventListener('input', (e) => {
-    $('#toolbar-delay-label').textContent = `${(Number(e.target.value) / 1000).toFixed(1)}s`;
+    const value = Number(e.target.value);
+    $('#toolbar-delay-label').textContent = `${(value / 1000).toFixed(1)}s`;
+    updateSetting('toolbarHideDelay', value);
   });
   $('#toolbar-delay').addEventListener('change', (e) => updateSetting('toolbarHideDelay', Number(e.target.value)));
 
