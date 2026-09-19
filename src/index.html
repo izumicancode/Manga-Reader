@@ -35,13 +35,15 @@
   <!-- Main app -->
   <div id="app" class="hidden">
     <header class="topbar">
-      <div class="brand">📚 Manga Library</div>
-      <div id="library-status" class="library-status" data-tone="neutral">Ready</div>
-      <nav class="tabs">
-        <button class="tab active" data-tab="library">Library</button>
-        <button class="tab" data-tab="history">Continue Reading</button>
-        <button class="tab" data-tab="settings">Settings</button>
-      </nav>
+      <div class="topbar-main">
+        <div class="brand"><span class="brand-mark">📚</span> Manga Library</div>
+        <div id="library-status" class="library-status" data-tone="neutral">Ready</div>
+        <nav class="tabs" aria-label="Main navigation">
+          <button class="tab active" data-tab="library">Library</button>
+          <button class="tab" data-tab="history">Continue Reading</button>
+          <button class="tab" data-tab="settings">Settings</button>
+        </nav>
+      </div>
       <div class="topbar-actions">
         <input id="search" type="text" placeholder="Search titles…" />
         <select id="category-filter" aria-label="Filter by category">

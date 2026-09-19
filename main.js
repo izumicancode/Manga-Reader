@@ -415,6 +415,8 @@ ipcMain.handle('get-page', async (e, bookId, pageName) => {
     if (buf) pageBinaryCache.set(cacheKeyForPage, buf);
     trimMap(pageBinaryCache, 256);
 
+    const ext = path.extname(pageName).toLowerCase().replace('.', '') || 'jpeg';
+    const mime = ext === 'jpg' ? 'jpeg' : ext;
     return `data:image/${mime};base64,${buf.toString('base64')}`;
   } catch (err) {
     console.error('get-page failed', err.message);

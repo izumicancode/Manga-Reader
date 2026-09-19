@@ -82,19 +82,46 @@ input, select {
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 18px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
-  background: rgba(21, 27, 34, 0.9);
+  background: rgba(21, 27, 34, 0.88);
+  backdrop-filter: blur(12px);
   -webkit-app-region: drag;
 }
 
+.topbar-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
 .brand {
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
   font-size: 15px;
   letter-spacing: -0.02em;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
 }
 
 .library-status {
@@ -154,22 +181,26 @@ input, select {
 .topbar-actions {
   margin-left: auto;
   display: flex;
+  align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   -webkit-app-region: no-drag;
 }
 
-#search, #category-filter, #sort-filter, #book-columns {
+#search, #category-filter, #status-filter, #sort-filter, #book-columns {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 9px 12px;
   color: var(--text);
   font-size: 13px;
-  width: 220px;
+  width: 180px;
   outline: none;
-  transition: border-color var(--anim-fast) ease, box-shadow var(--anim-fast) ease;
+  transition: border-color var(--anim-fast) ease, box-shadow var(--anim-fast) ease, transform var(--anim-fast) ease;
 }
 
+#status-filter { width: 150px; }
 #book-columns {
   width: 88px;
   text-align: center;
@@ -182,10 +213,12 @@ input, select {
   margin: 0;
 }
 
-#search:focus, #category-filter:focus, #sort-filter:focus, #book-columns:focus,
+#search:hover, #category-filter:hover, #status-filter:hover, #sort-filter:hover, #book-columns:hover,
+#search:focus, #category-filter:focus, #status-filter:focus, #sort-filter:focus, #book-columns:focus,
 .modal-card input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+  transform: translateY(-1px);
 }
 
 .view {
@@ -441,6 +474,12 @@ body.no-anim .book-card, body.no-anim .view, body.no-anim .reader-toolbar {
   border-radius: 10px;
   color: var(--text-muted);
   transition: all var(--anim-fast) ease;
+}
+
+.number-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .seg-btn.active {
