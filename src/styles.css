@@ -16,6 +16,7 @@
   --success: #46c38a;
   --shadow: rgba(2, 6, 12, 0.45);
   --card-min: 160px;
+  --grid-columns: 4;
   --anim-fast: 160ms;
   --anim-med: 220ms;
   --radius-lg: 18px;
@@ -157,7 +158,7 @@ input, select {
   -webkit-app-region: no-drag;
 }
 
-#search, #category-filter, #sort-filter {
+#search, #category-filter, #sort-filter, #book-columns {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -169,7 +170,19 @@ input, select {
   transition: border-color var(--anim-fast) ease, box-shadow var(--anim-fast) ease;
 }
 
-#search:focus, #category-filter:focus, #sort-filter:focus,
+#book-columns {
+  width: 88px;
+  text-align: center;
+  appearance: textfield;
+}
+
+#book-columns::-webkit-outer-spin-button,
+#book-columns::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#search:focus, #category-filter:focus, #sort-filter:focus, #book-columns:focus,
 .modal-card input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
@@ -184,7 +197,7 @@ input, select {
 /* ---------- Grid / Book cards ---------- */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
   gap: 20px 18px;
 }
 

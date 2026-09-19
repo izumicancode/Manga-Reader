@@ -82,7 +82,7 @@ async function boot() {
 // Local mirror of main.js's DEFAULT_PREFS, used only as a fallback if getSettings
 // fails entirely (e.g. first-run race) so the UI still has sane values to render.
 const DEFAULTS_FALLBACK = {
-  theme: 'dark', accentColor: '#e0555a', cardSize: 'medium', readingDirection: 'ltr',
+  theme: 'dark', accentColor: '#e0555a', cardSize: 'medium', libraryColumns: 4, readingDirection: 'ltr',
   defaultFit: 'contain', toolbarAutoHide: true, toolbarHideDelay: 2500, animationsEnabled: true,
 };
 
@@ -97,7 +97,9 @@ function applyAppearance(settings) {
   document.body.style.setProperty('--accent', accent);
   document.body.style.setProperty('--accent-soft', accent + '22');
   const cardMinMap = { small: '120px', medium: '160px', large: '210px' };
+  const libraryColumns = Number.isInteger(settings.libraryColumns) ? Math.min(Math.max(settings.libraryColumns, 1), 12) : 4;
   document.documentElement.style.setProperty('--card-min', cardMinMap[settings.cardSize] || cardMinMap.medium);
+  document.documentElement.style.setProperty('--grid-columns', String(libraryColumns));
   document.body.classList.toggle('no-anim', settings.animationsEnabled === false);
   state.fitMode = FIT_CYCLE.includes(settings.defaultFit) ? settings.defaultFit : 'contain';
   updateSettingsUI(settings);
@@ -405,6 +407,12 @@ function updateSettingsUI(settings) {
   const autoHideToggle = $('#toolbar-autohide-toggle');
   if (autoHideToggle) autoHideToggle.checked = settings.toolbarAutoHide !== false;
 
+  const bookColumnsInput = $('#book-columns');
+  if (bookColumnsInput) {
+    const value = Number.isInteger(settings.libraryColumns) ? settings.libraryColumns : DEFAULTS_FALLBACK.libraryColumns;
+    bookColumnsInput.value = value;
+  }
+
   const delayRow = $('#toolbar-delay-row');
   if (delayRow) delayRow.style.opacity = settings.toolbarAutoHide === false ? '0.4' : '1';
   const delaySlider = $('#toolbar-delay');
@@ -517,6 +525,12 @@ function bindEvents() {
   });
 
   $('#accent-custom').addEventListener('change', (e) => updateSetting('accentColor', e.target.value));
+
+  $('#book-columns').addEventListener('change', (e) => {
+    const value = Number.parseInt(e.target.value, 10);
+    if (Number.isNaN(value)) return;
+    updateSetting('libraryColumns', Math.min(Math.max(value, 1), 12));
+  });
 
   $('#animations-toggle').addEventListener('change', (e) => updateSetting('animationsEnabled', e.target.checked));
 

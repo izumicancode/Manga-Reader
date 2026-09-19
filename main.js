@@ -252,6 +252,7 @@ const DEFAULT_PREFS = {
   theme: 'dark',              // 'dark' | 'light'
   accentColor: '#e0555a',     // any valid CSS hex color
   cardSize: 'medium',         // 'small' | 'medium' | 'large'
+  libraryColumns: 4,          // 1..12 cards per row
   readingDirection: 'ltr',    // 'ltr' | 'rtl' (manga is often right-to-left)
   defaultFit: 'contain',      // 'contain' | 'width' | 'height' | 'original'
   toolbarAutoHide: true,
@@ -275,6 +276,7 @@ ipcMain.handle('set-setting', (e, key, value) => {
   // Light validation per key so a bad value from the UI can't corrupt state.
   if (key === 'accentColor' && !/^#[0-9a-fA-F]{6}$/.test(value)) return false;
   if (key === 'cardSize' && !['small', 'medium', 'large'].includes(value)) return false;
+  if (key === 'libraryColumns' && (!Number.isInteger(value) || value < 1 || value > 12)) return false;
   if (key === 'readingDirection' && !['ltr', 'rtl'].includes(value)) return false;
   if (key === 'defaultFit' && !['contain', 'width', 'height', 'original'].includes(value)) return false;
   if (key === 'theme' && !['dark', 'light'].includes(value)) return false;
