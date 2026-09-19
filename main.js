@@ -32,6 +32,8 @@ const ARCHIVE_EXT = new Set(['.cbz', '.zip', '.cbr', '.rar']);
 const rarCache = new Map();
 const archiveEntryCache = new Map();
 const pageBinaryCache = new Map();
+const pageDataUriCache = new Map();
+const coverDataUriCache = new Map();
 const thumbDir = () => {
   const dir = path.join(app.getPath('userData'), 'thumbnails');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -341,10 +343,18 @@ ipcMain.handle('get-cover', (e, bookId) => {
   try {
     const book = libraryStore.get(`books.${bookId}`);
     if (!book || !book.cover || !fs.existsSync(book.cover)) return null;
+
+    const coverKey = `${book.cover}:${book.mtimeMs || '0'}`;
+    const cached = coverDataUriCache.get(coverKey);
+    if (cached) return cached;
+
     const buf = fs.readFileSync(book.cover);
     const ext = path.extname(book.cover).toLowerCase().replace('.', '') || 'jpeg';
     const mime = ext === 'jpg' ? 'jpeg' : ext;
-    return `data:image/${mime};base64,${buf.toString('base64')}`;
+    const uri = `data:image/${mime};base64,${buf.toString('base64')}`;
+    coverDataUriCache.set(coverKey, uri);
+    trimMap(coverDataUriCache, 128);
+    return uri;
   } catch (err) {
     console.error('get-cover failed', err.message);
     return null;
@@ -387,13 +397,21 @@ ipcMain.handle('get-page', async (e, bookId, pageName) => {
   try {
     const book = libraryStore.get(`books.${bookId}`);
     if (!book) return null;
+
     const type = book.type || sourceType(book.filePath);
+    const ext = path.extname(pageName).toLowerCase().replace('.', '') || 'jpeg';
+    const mime = ext === 'jpg' ? 'jpeg' : ext;
     const cacheKeyForPage = `${book.filePath}:${pageName}:${book.mtimeMs || '0'}`;
-    const cached = pageBinaryCache.get(cacheKeyForPage);
-    if (cached) {
-      const ext = path.extname(pageName).toLowerCase().replace('.', '') || 'jpeg';
-      const mime = ext === 'jpg' ? 'jpeg' : ext;
-      return `data:image/${mime};base64,${cached.toString('base64')}`;
+
+    const cachedUri = pageDataUriCache.get(cacheKeyForPage);
+    if (cachedUri) return cachedUri;
+
+    const cachedBinary = pageBinaryCache.get(cacheKeyForPage);
+    if (cachedBinary) {
+      const uri = `data:image/${mime};base64,${cachedBinary.toString('base64')}`;
+      pageDataUriCache.set(cacheKeyForPage, uri);
+      trimMap(pageDataUriCache, 256);
+      return uri;
     }
 
     let buf;
@@ -410,10 +428,15 @@ ipcMain.handle('get-page', async (e, bookId, pageName) => {
       buf = entry.getData();
     }
 
-    if (buf) pageBinaryCache.set(cacheKeyForPage, buf);
+    if (!buf) return null;
+
+    pageBinaryCache.set(cacheKeyForPage, buf);
     trimMap(pageBinaryCache, 256);
 
-    return `data:image/${mime};base64,${buf.toString('base64')}`;
+    const uri = `data:image/${mime};base64,${buf.toString('base64')}`;
+    pageDataUriCache.set(cacheKeyForPage, uri);
+    trimMap(pageDataUriCache, 256);
+    return uri;
   } catch (err) {
     console.error('get-page failed', err.message);
     return null;
