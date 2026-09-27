@@ -1,6 +1,6 @@
 # Manga Library
 
-A cross-platform desktop app for organizing and reading local manga on Windows, macOS, and Linux. Built with Electron, using the same feature set as before — library grid, categories, history, PIN lock, dark/light themes — rewritten for modern standards and speed.
+A cross-platform desktop app for organizing and reading local manga on Windows, macOS, and Linux. Built with Electron, using the same feature set as before — library grid, categories, history, PIN lock, dark and light themes — rewritten for modern standards and speed.
 
 ## What changed in this pass
 
