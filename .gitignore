@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Electron build output
+release/
+dist/
+out/
+
+# Runtime and debug logs
+*.log
+logs/
+
+# Electron local data
+*.local
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
