@@ -178,6 +178,21 @@ function bindSwipeGestures() {
 
 export function bindReaderEvents() {
   $('#reader-back').addEventListener('click', closeReader);
+  const toolbarToggle = $('#reader-toolbar-toggle');
+  let toolbarTimer;
+  const setToolbarVisible = (visible) => {
+    clearTimeout(toolbarTimer);
+    $('#reader').classList.toggle('show-toolbar', visible);
+    toolbarToggle.textContent = visible ? 'Hide bar' : 'Show bar';
+    toolbarToggle.title = `${visible ? 'Hide' : 'Show'} toolbar (T)`;
+    toolbarToggle.setAttribute('aria-label', `${visible ? 'Hide' : 'Show'} toolbar`);
+    if (visible && state.settings.toolbarAutoHide !== false) {
+      toolbarTimer = setTimeout(() => setToolbarVisible(false), state.settings.toolbarHideDelay || 2500);
+    }
+  };
+  toolbarToggle.addEventListener('click', () => {
+    setToolbarVisible(!$('#reader').classList.contains('show-toolbar'));
+  });
   $('#reader-next').addEventListener('click', () => turnPage('next'));
   $('#reader-prev').addEventListener('click', () => turnPage('prev'));
   $('#reader-fit').addEventListener('click', cycleFitMode);
@@ -206,6 +221,10 @@ export function bindReaderEvents() {
   document.addEventListener('keydown', (e) => {
     if ($('#reader').classList.contains('hidden')) return;
     const key = e.key.toLowerCase();
+    if (key === 't') {
+      setToolbarVisible(!$('#reader').classList.contains('show-toolbar'));
+      return;
+    }
     if (key === 'arrowright' || key === 'd') turnPage(state.settings.readingDirection === 'rtl' ? 'prev' : 'next');
     if (key === 'arrowleft' || key === 'a') turnPage(state.settings.readingDirection === 'rtl' ? 'next' : 'prev');
     if (key === 'f' && e.ctrlKey && e.shiftKey) {
@@ -219,12 +238,6 @@ export function bindReaderEvents() {
     if (e.key === 'Escape') closeReader();
   });
 
-  let toolbarTimer;
-  const scheduleToolbarHide = () => {
-    clearTimeout(toolbarTimer);
-    if (state.settings.toolbarAutoHide === false) return; // stays visible
-    toolbarTimer = setTimeout(() => $('#reader').classList.remove('show-toolbar'), state.settings.toolbarHideDelay || 2500);
-  };
-  window.showReaderToolbar = () => { $('#reader').classList.add('show-toolbar'); scheduleToolbarHide(); };
+  window.showReaderToolbar = () => setToolbarVisible(true);
   $('#reader').addEventListener('mousemove', window.showReaderToolbar);
 }

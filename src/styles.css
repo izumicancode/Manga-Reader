@@ -776,10 +776,14 @@ body.no-anim .cover-img { transition: none; opacity: 1; }
   background: rgba(12, 16, 21, 0.95);
   border-top: 1px solid rgba(148, 163, 184, 0.18);
   opacity: 0;
+  pointer-events: none;
   transition: opacity 200ms ease;
 }
 
-.reader:hover .reader-toolbar, .reader.show-toolbar .reader-toolbar { opacity: 1; }
+.reader.show-toolbar .reader-toolbar {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 .rt-btn {
   color: #fff;
