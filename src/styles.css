@@ -309,7 +309,6 @@ body[data-theme="light"] .topbar {
   background: var(--bg-elevated);
   box-shadow: 0 12px 28px var(--shadow);
   cursor: pointer;
-  will-change: transform;
   transition: transform var(--anim-fast) ease, border-color var(--anim-fast) ease, box-shadow var(--anim-fast) ease;
   /* Cards far outside the viewport skip layout, paint, and hit-testing
      entirely until they scroll into view — this is what keeps a library of
@@ -317,7 +316,7 @@ body[data-theme="light"] .topbar {
      scaling the whole grid, similar to how a virtualized list in a native
      app only renders visible rows. */
   content-visibility: auto;
-  contain-intrinsic-size: 220px 300px;
+  contain-intrinsic-size: 220px var(--card-placeholder-height, 320px);
 }
 
 body.no-anim .book-card, body.no-anim .view, body.no-anim .reader-toolbar {

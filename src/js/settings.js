@@ -12,7 +12,10 @@ export function applyAppearance(settings) {
   document.body.style.setProperty('--accent', accent);
   document.body.style.setProperty('--accent-soft', accent + '22');
   const cardWidthMap = { small: '120px', medium: '160px', large: '210px' };
-  document.documentElement.style.setProperty('--card-width', cardWidthMap[settings.cardSize] || cardWidthMap.medium);
+  const cardHeightMap = { small: '255px', medium: '320px', large: '395px' };
+  const cardSize = settings.cardSize || 'medium';
+  document.documentElement.style.setProperty('--card-width', cardWidthMap[cardSize] || cardWidthMap.medium);
+  document.documentElement.style.setProperty('--card-placeholder-height', cardHeightMap[cardSize] || cardHeightMap.medium);
   document.body.classList.toggle('no-anim', settings.animationsEnabled === false);
   state.fitMode = FIT_CYCLE.includes(settings.defaultFit) ? settings.defaultFit : 'contain';
   updateSettingsUI(settings);
