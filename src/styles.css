@@ -27,7 +27,7 @@ body[data-theme="light"] { color-scheme: light; }
   --danger: #ff6b6b;
   --success: #46c38a;
   --shadow: rgba(2, 6, 12, 0.45);
-  --card-min: 160px;
+  --card-width: 160px;
   --anim-fast: 160ms;
   --anim-med: 220ms;
   --radius-lg: 18px;
@@ -295,7 +295,7 @@ body[data-theme="light"] .topbar {
 /* ---------- Grid / Book cards ---------- */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--card-width), 100%), var(--card-width)));
   gap: 20px 18px;
 }
 

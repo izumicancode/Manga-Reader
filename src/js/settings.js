@@ -11,8 +11,8 @@ export function applyAppearance(settings) {
   document.documentElement.style.setProperty('--accent-soft', accent + '22');
   document.body.style.setProperty('--accent', accent);
   document.body.style.setProperty('--accent-soft', accent + '22');
-  const cardMinMap = { small: '120px', medium: '160px', large: '210px' };
-  document.documentElement.style.setProperty('--card-min', cardMinMap[settings.cardSize] || cardMinMap.medium);
+  const cardWidthMap = { small: '120px', medium: '160px', large: '210px' };
+  document.documentElement.style.setProperty('--card-width', cardWidthMap[settings.cardSize] || cardWidthMap.medium);
   document.body.classList.toggle('no-anim', settings.animationsEnabled === false);
   state.fitMode = FIT_CYCLE.includes(settings.defaultFit) ? settings.defaultFit : 'contain';
   updateSettingsUI(settings);
