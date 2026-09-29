@@ -90,7 +90,9 @@ let pinSetupMode = 'set';
 function openPinSetup(mode) {
   pinSetupMode = mode;
   $('#pin-setup-title').textContent = mode === 'set' ? 'Set a PIN' : 'Enter current PIN to disable lock';
-  $('#pin-setup-input').placeholder = mode === 'set' ? 'Enter 4–6 digit PIN' : 'Current PIN';
+  $('#pin-setup-input').placeholder = mode === 'set' ? 'Enter 4-digit PIN' : 'Current PIN';
+  $('#pin-setup-input').maxLength = mode === 'set' ? 4 : 6;
+  $('#pin-setup-input').pattern = mode === 'set' ? '[0-9]{4}' : '[0-9]{4,6}';
   $('#pin-setup-modal').classList.remove('hidden');
   $('#pin-setup-input').value = '';
   $('#pin-setup-input').focus();
@@ -140,14 +142,18 @@ export function bindSettingsEvents() {
     if (pinSetupMode === 'set') $('#pin-toggle').checked = false;
   });
 
+  $('#pin-setup-input').addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, pinSetupMode === 'set' ? 4 : 6);
+  });
+
   $('#pin-setup-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') $('#pin-setup-confirm').click();
   });
 
   $('#pin-setup-confirm').addEventListener('click', async () => {
     const val = $('#pin-setup-input').value.trim();
-    if (!/^\d{4,6}$/.test(val)) {
-      showToast('PIN must be 4–6 digits.');
+    if (pinSetupMode === 'set' && !/^\d{4}$/.test(val)) {
+      showToast('PIN must be exactly 4 digits.');
       return;
     }
 

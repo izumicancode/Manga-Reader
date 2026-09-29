@@ -500,7 +500,7 @@ function safeEqual(a, b) {
 ipcMain.handle('pin-status', () => ({ enabled: !!store.get('pinHash') }));
 
 ipcMain.handle('pin-set', (e, pin) => {
-  if (!/^\d{4,6}$/.test(pin || '')) return false;
+  if (!/^\d{4}$/.test(pin || '')) return false;
   store.set('pinHash', hashId('salted::' + pin));
   return true;
 });

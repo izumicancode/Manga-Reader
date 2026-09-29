@@ -279,7 +279,7 @@
   <div id="pin-setup-modal" class="modal hidden">
     <div class="modal-card">
       <h2 id="pin-setup-title">Set a PIN</h2>
-      <input id="pin-setup-input" type="password" inputmode="numeric" maxlength="6" placeholder="Enter 4–6 digit PIN" />
+      <input id="pin-setup-input" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="Enter 4-digit PIN" />
       <div class="modal-actions">
         <button id="pin-setup-cancel" class="btn">Cancel</button>
         <button id="pin-setup-confirm" class="btn primary">Confirm</button>
