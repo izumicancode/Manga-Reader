@@ -10,7 +10,7 @@ The goal was the same idea as [Mihon](https://github.com/mihonapp/mihon): fast, 
 
 **No more O(n²) scans.** The old cover-cache check (`extractCoverToCache`) called `fs.readdirSync` on the *entire* thumbnail directory for *every single book* on every scan — for a library of a few thousand titles that's millions of redundant directory reads. The scanner now reads that directory once per scan and reuses the book's already-known cover path when the file hasn't changed.
 
-**Non-blocking scans.** Directory walking and per-file processing now use `fs.promises` and yield to the event loop periodically, so scanning a large library folder no longer freezes window resizing, IPC, or anything else on Electron's single main-process thread.
+**Non-blocking scans.** Directory walking and per-file processing now use `fs.promises` and yield to the event loop periodically, so scanning a large library folder no longer freezes window resizing, IPC, or anything else on Electron's single main-process thread"This needs working".
 
 **Event-driven file watching.** The library folder is watched with `fs.watch` instead of polling every 5 seconds; a polling fallback only kicks in on platforms where recursive watching isn't supported.
 
