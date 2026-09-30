@@ -11,5 +11,8 @@ This i need to add:
 -Need to add a loader
 "something round spining smoothly"
 
+-Need to expand the cache 
+"so it won't get stuck or lags"
+
 -More Option
 "adding more option to do custom thing such as how many books you want to sort in a row etc"
