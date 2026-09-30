@@ -40,30 +40,39 @@ Manga Reader helps you browse your library, import folders and archives, track r
 ### Prerequisites
 
 - Node.js 18+
+
 - npm
 
 ### Install
 
 ```bash
+
 npm install
+
 ```
 
 ### Run in development mode
 
 ```bash
+
 npm run dev
+
 ```
 
 ### Build the app
 
 ```bash
+
 npm run build
+
 ```
 
 ### Package distributables
 
 ```bash
+
 npm run dist
+
 ```
 
 This creates app packages in the release output folder, depending on the target platform.
