@@ -119,4 +119,4 @@ The app PIN protects the UI layer but does not encrypt files on disk. It is inte
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Apache-2.0 License](LICENSE).
