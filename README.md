@@ -2,7 +2,7 @@
 
 A modern desktop app for organizing and reading local manga collections, built with Electron, React, and Vite.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Electron](https://img.shields.io/badge/Electron-30.x-9feaf9.svg)](https://www.electronjs.org/)
 
