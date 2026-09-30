@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 14% 96%;
+    --foreground: 212 26% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 212 26% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 212 26% 13%;
+    --primary: 4 73% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 22% 92%;
+    --secondary-foreground: 212 26% 13%;
+    --muted: 214 22% 92%;
+    --muted-foreground: 213 14% 43%;
+    --accent: 214 25% 90%;
+    --accent-foreground: 212 26% 13%;
+    --destructive: 0 65% 57%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 160 55% 40%;
+    --border: 215 25% 88%;
+    --input: 215 25% 85%;
+    --ring: 4 73% 58%;
+    --radius: 0.75rem;
+  }
+  .dark {
+    --background: 216 29% 8%;
+    --foreground: 208 36% 95%;
+    --card: 210 24% 11%;
+    --card-foreground: 208 36% 95%;
+    --popover: 210 24% 12%;
+    --popover-foreground: 208 36% 95%;
+    --secondary: 209 23% 16%;
+    --secondary-foreground: 208 36% 95%;
+    --muted: 209 23% 16%;
+    --muted-foreground: 211 15% 62%;
+    --accent: 210 20% 20%;
+    --accent-foreground: 208 36% 95%;
+    --destructive: 0 100% 71%;
+    --destructive-foreground: 216 29% 8%;
+    --success: 154 50% 52%;
+    --border: 213 20% 22%;
+    --input: 213 20% 24%;
+  }
+  * { @apply border-border; }
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-background text-foreground font-sans antialiased overflow-hidden select-none;
+  }
+  input, textarea { @apply select-text; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-muted-foreground/25 border-2 border-transparent bg-clip-padding; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }
+}
+
+.drag-region { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
