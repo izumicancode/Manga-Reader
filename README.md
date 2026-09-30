@@ -1,47 +1,113 @@
-# Manga Library
+# Manga Reader
 
-A cross-platform desktop app for organizing and reading local manga (folders, images, ZIP/CBZ, RAR/CBR).
-Rebuilt from [izumicancode/Manga-Reader](https://github.com/izumicancode/Manga-Reader) on a modern stack:
+A modern desktop app for organizing and reading local manga collections, built with Electron, React, and Vite.
 
-- **electron-vite** (main / preload / renderer, HMR in dev)
-- **React 18 + TypeScript**
-- **Tailwind CSS** + **shadcn/ui** (Radix primitives: Select, Dialog, Switch, Slider, ToggleGroup, Sonner toasts)
-- **Framer Motion** (animated tabs via `layoutId`, staggered card entrance, page slide/drag-to-turn, spring toolbar, PIN shake)
-- **Zustand** for state
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Electron](https://img.shields.io/badge/Electron-30.x-9feaf9.svg)](https://www.electronjs.org/)
 
-## Run
+Manga Reader helps you browse your library, import folders and archives, track reading progress, and read manga from local files without friction. It supports folders, image-based collections, and common archive formats such as CBZ and CBR.
+
+## Highlights
+
+- Local manga library with fast scanning and indexing
+- Support for folders, individual images, ZIP/CBZ, and RAR/CBR archives
+- Reading progress and history tracking
+- Pin-protected lock screen for app access
+- Customizable accent color and polished UI
+- Built on Electron + Vite for a modern desktop experience
+
+## Features
+
+- Organize a library of manga from local directories
+- Detect and read archive-based manga volumes
+- View cover art and metadata during browsing
+- Continue reading from saved history and bookmarks
+- Toggle between reading controls and a sleek desktop interface
+- Keep compatibility with existing stored library and progress data from the previous app version
+
+## Tech Stack
+
+- Electron + Vite
+- React 18 + TypeScript
+- Tailwind CSS
+- shadcn/ui + Radix primitives
+- Zustand for state management
+- Framer Motion for transitions and animations
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm
+
+### Install
 
 ```bash
 npm install
-npm run dev        # development with HMR
-npm run build      # production build into ./out
-npm run dist       # installers into ./release (NSIS / dmg / AppImage+deb)
 ```
 
-## Structure
+### Run in development mode
+
+```bash
+npm run dev
+```
+
+### Build the app
+
+```bash
+npm run build
+```
+
+### Package distributables
+
+```bash
+npm run dist
+```
+
+This creates app packages in the release output folder, depending on the target platform.
+
+## Project Structure
 
 ```text
-src/
-├── main/index.ts        # scanning, CBZ/CBR, IPC, PIN, cover:// + page:// protocols
-├── preload/index.ts     # typed window.api bridge
-├── shared/              # types + defaults shared by main and renderer
-└── renderer/src/
-    ├── store.ts         # Zustand store (replaces state.js + event bus)
-    ├── components/      # TopBar, BookCard, LibraryView, HistoryView, SettingsView, Reader, LockScreen
-    └── components/ui/   # shadcn/ui components
+.
+├── src/
+│   ├── main/                # Electron main process logic
+│   ├── preload/             # IPC bridge and typed API exposure
+│   ├── shared/              # Shared constants, defaults, and types
+│   └── renderer/src/        # React app UI and state
+│       ├── components/      # Views and reusable UI components
+│       ├── lib/             # Utility helpers
+│       ├── App.tsx          # App shell
+│       ├── store.ts         # Zustand store
+│       └── main.tsx         # Renderer entry
+├── electron.vite.config.ts
+├── electron-builder.yml
+├── package.json
+├── tsconfig.json
+├── tailwind.config.js
+├── LICENSE
+├── README.md
+└── docs/                   # Design and architecture notes
 ```
 
-## Compatibility
+## Compatibility and Migration
 
-Config, library, history and thumbnail data on disk use the same electron-store files and keys as v2,
-so existing libraries, progress, bookmarks and PINs carry over.
+The app preserves the same Electron store keys and disk layout used by the previous version, so existing library entries, progress data, bookmarks, and PIN settings can carry over with minimal friction.
 
-## Changes vs. the original
+## Security Note
 
-- PINs are now hashed with per-install salted `scrypt`. Existing v2 PINs still verify; setting a new PIN upgrades the hash.
-- The library watcher's change detection is async instead of a sync recursive walk.
-- Cover lookup during scans is an O(1) map lookup.
-- Reader: click zones at the screen edges, a progress line, and drag-to-turn with animated page slides.
-- Accent color drives shadcn's `--primary` token, so every component follows it.
+The app PIN protects the UI layer but does not encrypt files on disk. It is intended as a local access control mechanism, not a full disk-encryption feature.
 
-The PIN only guards the app UI; it does not encrypt files on disk.
+## Notes on the Current Implementation
+
+- PINs are hashed with a per-install salted scrypt flow, while older v2 PINs remain compatible for verification.
+- The library watcher uses async change detection instead of a synchronous recursive scan.
+- Cover lookup is optimized with an O(1) map lookup during scans.
+- Reading interactions include edge click zones, progress indicators, and drag-to-turn motion.
+- Accent colors flow through the app theme system, updating the UI tokens consistently.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
