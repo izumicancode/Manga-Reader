@@ -219,7 +219,7 @@ export function SettingsView(): JSX.Element {
       </Section>
 
       <p className="pb-4 text-center text-xs text-muted-foreground">
-        Manga Library v3.0.0 — reads local image folders, images, ZIP, CBZ, RAR and CBR files. No internet connection used.
+        Manga Library v3.0.0 — by Izumicancode
       </p>
 
       <PinDialog mode={pinMode} onClose={() => setPinMode(null)} />
