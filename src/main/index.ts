@@ -293,7 +293,10 @@ ipcMain.handle('choose-library-folder', async () => {
 
 ipcMain.handle('get-settings', () => {
   const prefs: Record<string, unknown> = {}
-  for (const key of PREF_KEYS) prefs[key] = store.get(key, DEFAULT_PREFS[key])
+  for (const key of PREF_KEYS) {
+    const value = store.get(key, DEFAULT_PREFS[key])
+    prefs[key] = VALIDATORS[key](value) ? value : DEFAULT_PREFS[key]
+  }
   return { ...prefs, libraryFolder: store.get('libraryFolder', null), pinEnabled: !!store.get('pinHash') }
 })
 
@@ -305,7 +308,7 @@ const VALIDATORS: { [K in keyof Prefs]: (v: unknown) => boolean } = {
   defaultFit: (v) => ['contain', 'width', 'height', 'original'].includes(v as string),
   toolbarAutoHide: (v) => typeof v === 'boolean',
   animationsEnabled: (v) => typeof v === 'boolean',
-  toolbarHideDelay: (v) => typeof v === 'number' && v >= 500 && v <= 10000
+  toolbarHideDelay: (v) => typeof v === 'number' && Number.isInteger(v) && v >= 1000 && v <= 6000 && (v - 1000) % 500 === 0
 }
 
 function allowedExternalUrl(value: unknown): URL | null {
