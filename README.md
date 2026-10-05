@@ -123,7 +123,7 @@ Configured targets are a Windows NSIS installer, macOS DMG, and Linux AppImage a
 
 ## Compatibility and Migration
 
-The app preserves the same Electron store keys and disk layout used by the previous version, so existing library entries, progress data, bookmarks, and PIN settings can carry over with minimal friction.
+The app retains the `config`, `library`, and `history` Electron stores in the per-user data directory. Legacy v2 PIN hashes remain verifiable and are upgraded to salted scrypt hashes after a successful check.
 
 ## Local Data
 
@@ -143,7 +143,7 @@ The app PIN gates the UI but does not encrypt manga files or other data on disk.
 
 - PINs are hashed with a per-install salted scrypt flow, while older v2 PINs remain compatible for verification.
 - The library watcher uses async change detection instead of a synchronous recursive scan.
-- Cover lookup is optimized with an O(1) map lookup during scans.
+- Source metadata fingerprints invalidate stale page data, and decoded page caches use byte-based eviction.
 - Reading interactions include edge click zones, progress indicators, and drag-to-turn motion.
 - Accent colors flow through the app theme system, updating the UI tokens consistently.
 
