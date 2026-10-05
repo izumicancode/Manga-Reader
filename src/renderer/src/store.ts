@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { toast } from 'sonner'
-import { DEFAULT_PREFS } from '@shared/constants'
+import { DEFAULT_PREFS, PREF_KEYS } from '@shared/constants'
 import type { Book, History, Prefs, Settings } from '@shared/types'
 
 export type Tab = 'library' | 'history' | 'settings'
@@ -174,6 +174,7 @@ export const useApp = create<AppState>((set, get) => ({
   resetSettings: async () => {
     const defaults = await safe(window.api.resetSettings(), null, "Couldn't reset settings.")
     if (defaults) {
+      for (const key of PREF_KEYS) settingWriteIds.set(key, (settingWriteIds.get(key) ?? 0) + 1)
       set({ settings: { ...get().settings, ...defaults } })
       toast.success('Settings reset to defaults.')
     }
