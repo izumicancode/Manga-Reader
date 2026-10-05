@@ -89,10 +89,12 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase()
+      const fullscreenShortcut = k === 'f' && e.shiftKey && (e.ctrlKey || e.metaKey)
+      if ((e.ctrlKey || e.metaKey || e.altKey) && !fullscreenShortcut) return
       if (k === 'arrowright' || k === 'd') { e.preventDefault(); turn('right') }
       else if (k === 'arrowleft' || k === 'a') { e.preventDefault(); turn('left') }
       else if (k === 't') { if (toolbar) { clearTimeout(hideTimer.current); setToolbar(false) } else showToolbar(); return }
-      else if (k === 'f' && e.ctrlKey && e.shiftKey) { e.preventDefault(); void toggleFullscreen() }
+      else if (fullscreenShortcut) { e.preventDefault(); void toggleFullscreen() }
       else if (k === 'f') { e.preventDefault(); cycleFit() }
       else if (k === '+' || k === '=') { e.preventDefault(); changeZoom(0.1) }
       else if (k === '-') { e.preventDefault(); changeZoom(-0.1) }
