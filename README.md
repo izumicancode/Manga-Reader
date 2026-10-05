@@ -11,7 +11,7 @@ Manga Reader indexes local files in place, so choosing a library folder does not
 ## Highlights
 
 - Local manga library with fast scanning and indexing
-- Support for folders, individual images, ZIP/CBZ, and RAR/CBR archives
+- Supported sources: folders, JPG/JPEG, PNG, WebP, GIF, BMP, AVIF, ZIP/CBZ, and RAR/CBR archives
 - Reading progress and history tracking
 - Pin-protected lock screen for app access
 - Customizable accent color and polished UI
