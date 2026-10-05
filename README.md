@@ -29,6 +29,8 @@ Manga Reader indexes local files in place, so choosing a library folder does not
 - Continue reading from saved history and bookmarks
 - Choose left-to-right or right-to-left reading and page, width, height, or original-size fitting
 - Switch between single-page and double-page spreads; zoom ranges from 50% to 300%
+- Reader keys: arrows or `A`/`D` turn pages, `Home`/`End` jump to either end, `F` changes fit, `+`/`-` zoom, `B` toggles a bookmark, `S` toggles spreads, and `T` toggles the toolbar
+- Use `Ctrl`/`Cmd`+`Shift`+`F` for fullscreen; `Escape` exits fullscreen or closes the reader
 - Toggle between reading controls and a sleek desktop interface
 - Keep compatibility with existing stored library and progress data from the previous app version
 
