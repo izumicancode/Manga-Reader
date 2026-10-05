@@ -16,6 +16,7 @@ export interface ReaderSession {
 }
 
 const FALLBACK_SETTINGS: Settings = { ...DEFAULT_PREFS, libraryFolder: null, pinEnabled: false }
+const settingWriteIds = new Map<keyof Prefs, number>()
 
 const OPEN_ERRORS: Record<string, string> = {
   'missing-file': 'That file no longer exists on disk. Try rescanning your library.',
@@ -145,9 +146,13 @@ export const useApp = create<AppState>((set, get) => ({
 
   updateSetting: async (key, value) => {
     const previous = get().settings[key]
+    const writeId = (settingWriteIds.get(key) ?? 0) + 1
+    settingWriteIds.set(key, writeId)
     set({ settings: { ...get().settings, [key]: value } }) // optimistic
     const ok = await safe(window.api.setSetting(key, value), false, "Couldn't save that setting.")
-    if (!ok) set({ settings: { ...get().settings, [key]: previous } })
+    if (!ok && settingWriteIds.get(key) === writeId) {
+      set({ settings: { ...get().settings, [key]: previous } })
+    }
   },
 
   resetSettings: async () => {
