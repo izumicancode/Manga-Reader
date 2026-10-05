@@ -17,7 +17,8 @@ const TONE_DOT = { neutral: 'bg-muted-foreground', active: 'bg-primary animate-p
 export function TopBar(): JSX.Element {
   const { tab, setTab, books, status, search, category, statusFilter, sort, setFilter } = useApp()
   const searchRef = useRef<HTMLInputElement>(null)
-  const categories = [...new Set(books.map((b) => b.category || 'Uncategorized'))].sort()
+  const categories = [...new Set(books.map((b) => b.category || 'Uncategorized'))]
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
   const mac = window.api.platform === 'darwin'
 
   useEffect(() => {
