@@ -129,6 +129,12 @@ The app preserves the same Electron store keys and disk layout used by the previ
 
 Settings, the library index, and reading history are stored in Electron's per-user `userData` directory. Generated cover images are cached there as well; original manga files remain in the folders you selected.
 
+## Troubleshooting
+
+- If a title is missing after adding files, use **Rescan Now** in Settings.
+- Unreadable files and archives without supported page images are skipped; check the scan notification and verify the source can be read.
+- If no titles appear, confirm the selected folder contains supported image files or archives, directly or in subfolders.
+
 ## Security Note
 
 The app PIN protects the UI layer but does not encrypt files on disk. It is intended as a local access control mechanism, not a full disk-encryption feature.
