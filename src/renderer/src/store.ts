@@ -17,6 +17,7 @@ export interface ReaderSession {
 
 const FALLBACK_SETTINGS: Settings = { ...DEFAULT_PREFS, libraryFolder: null, pinEnabled: false }
 const settingWriteIds = new Map<keyof Prefs, number>()
+let removeLibraryChangedListener: (() => void) | undefined
 
 const OPEN_ERRORS: Record<string, string> = {
   'missing-file': 'That file no longer exists on disk. Try rescanning your library.',
@@ -87,7 +88,8 @@ export const useApp = create<AppState>((set, get) => ({
   enterApp: async () => {
     const settings = await safe(window.api.getSettings(), get().settings)
     set({ settings: { ...FALLBACK_SETTINGS, ...settings }, phase: 'ready' })
-    window.api.onLibraryChanged(() => {
+    removeLibraryChangedListener?.()
+    removeLibraryChangedListener = window.api.onLibraryChanged(() => {
       toast('Library changes detected. Refreshing…')
       void get().refreshLibrary({ quiet: true })
     })
