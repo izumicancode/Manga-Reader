@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Github, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
@@ -108,6 +108,8 @@ export function SettingsView(): JSX.Element {
   const [pinMode, setPinMode] = useState<'set' | 'disable' | null>(null)
   const [delay, setDelay] = useState(s.toolbarHideDelay)
   const [confirmReset, setConfirmReset] = useState(false)
+
+  useEffect(() => setDelay(s.toolbarHideDelay), [s.toolbarHideDelay])
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-6">
