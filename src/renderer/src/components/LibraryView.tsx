@@ -51,7 +51,7 @@ export function BookGrid({ ids }: { ids: string[] }): JSX.Element {
 }
 
 export function LibraryView(): JSX.Element {
-  const { books, history, settings, status, search, category, statusFilter, sort, pickFolder, refreshLibrary } = useApp()
+  const { books, history, settings, status, search, category, statusFilter, sort, pickFolder, refreshLibrary, setFilter } = useApp()
 
   const ids = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -95,6 +95,7 @@ export function LibraryView(): JSX.Element {
         icon={<SearchX className="h-8 w-8" />}
         title="No titles match these filters"
         message="Try a different search, category, or reading status."
+        action={<Button variant="secondary" onClick={() => setFilter({ search: '', category: 'all', statusFilter: 'all' })}>Clear Filters</Button>}
       />
     )
   }
