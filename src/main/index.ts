@@ -431,7 +431,8 @@ function safeEqual(a: string, b: string): boolean {
   return A.length === B.length && crypto.timingSafeEqual(A, B)
 }
 
-function checkPin(pin: string): boolean {
+function checkPin(pin: unknown): boolean {
+  if (typeof pin !== 'string' || !/^\d{4}$/.test(pin)) return false
   const hash = store.get('pinHash') as string | undefined
   if (!hash) return true
   const salt = store.get('pinSalt') as string | undefined
@@ -444,19 +445,19 @@ function checkPin(pin: string): boolean {
 }
 
 ipcMain.handle('pin-status', () => ({ enabled: !!store.get('pinHash') }))
-ipcMain.handle('pin-set', (_e, pin: string) => {
-  if (!/^\d{4}$/.test(pin || '')) return false
+ipcMain.handle('pin-set', (_e, pin: unknown) => {
+  if (typeof pin !== 'string' || !/^\d{4}$/.test(pin)) return false
   const salt = crypto.randomBytes(16).toString('hex')
   store.set('pinSalt', salt)
   store.set('pinHash', scrypt(pin, salt))
   return true
 })
-ipcMain.handle('pin-disable', (_e, pin: string) => {
+ipcMain.handle('pin-disable', (_e, pin: unknown) => {
   if (!store.get('pinHash') || !checkPin(pin)) return false
   store.delete('pinHash'); store.delete('pinSalt')
   return true
 })
-ipcMain.handle('pin-verify', (_e, pin: string) => checkPin(String(pin)))
+ipcMain.handle('pin-verify', (_e, pin: unknown) => checkPin(pin))
 
 // ---------- image protocols ----------
 const MIME: Record<string, string> = { jpg: 'jpeg', jpeg: 'jpeg', png: 'png', webp: 'webp', gif: 'gif', bmp: 'bmp', avif: 'avif' }
