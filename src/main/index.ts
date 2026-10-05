@@ -435,7 +435,12 @@ function checkPin(pin: string): boolean {
   const hash = store.get('pinHash') as string | undefined
   if (!hash) return true
   const salt = store.get('pinSalt') as string | undefined
-  return safeEqual(salt ? scrypt(pin, salt) : legacyHash(pin), hash)
+  if (salt) return safeEqual(scrypt(pin, salt), hash)
+  if (!safeEqual(legacyHash(pin), hash)) return false
+  const upgradedSalt = crypto.randomBytes(16).toString('hex')
+  store.set('pinSalt', upgradedSalt)
+  store.set('pinHash', scrypt(pin, upgradedSalt))
+  return true
 }
 
 ipcMain.handle('pin-status', () => ({ enabled: !!store.get('pinHash') }))
