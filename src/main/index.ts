@@ -418,8 +418,9 @@ ipcMain.handle('clear-history', () => {
 ipcMain.handle('toggle-fullscreen', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (!win) return false
-  win.setFullScreen(!win.isFullScreen())
-  return win.isFullScreen()
+  const next = !win.isFullScreen()
+  win.setFullScreen(next)
+  return next
 })
 
 // ---------- IPC: PIN ----------
@@ -545,6 +546,11 @@ function createWindow(): void {
     }
   })
   win.webContents.on('will-navigate', (event) => event.preventDefault())
+  const reportFullscreen = (): void => {
+    if (!win.isDestroyed()) win.webContents.send('fullscreen-changed', win.isFullScreen())
+  }
+  win.on('enter-full-screen', reportFullscreen)
+  win.on('leave-full-screen', reportFullscreen)
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) void shell.openExternal(url)
     return { action: 'deny' }

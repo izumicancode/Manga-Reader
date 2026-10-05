@@ -24,6 +24,11 @@ const api = {
   getHistory: () => invoke<History>('get-history'),
   clearHistory: () => invoke<boolean>('clear-history'),
   toggleFullscreen: () => invoke<boolean>('toggle-fullscreen'),
+  onFullscreenChange: (cb: (fullscreen: boolean) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, fullscreen: boolean): void => cb(fullscreen)
+    ipcRenderer.on('fullscreen-changed', listener)
+    return () => { ipcRenderer.removeListener('fullscreen-changed', listener) }
+  },
   pinStatus: () => invoke<{ enabled: boolean }>('pin-status'),
   pinSet: (pin: string) => invoke<boolean>('pin-set', pin),
   pinDisable: (pin: string) => invoke<boolean>('pin-disable', pin),

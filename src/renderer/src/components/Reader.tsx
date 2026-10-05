@@ -39,6 +39,8 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
   const hideTimer = useRef<ReturnType<typeof setTimeout>>()
   const preloaded = useRef(new Set<string>())
 
+  useEffect(() => window.api.onFullscreenChange(setFullscreen), [])
+
   const urlFor = useCallback(
     (i: number) => (i < 0 || i >= pages.length ? null : window.api.pageUrl(book.id, book.sourceVersion, pages[i])),
     [book.id, book.sourceVersion, pages]
