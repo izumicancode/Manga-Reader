@@ -27,6 +27,8 @@ Manga Reader indexes local files in place, so choosing a library folder does not
 - A title's cover is taken from its first naturally sorted image
 - View cover art and metadata during browsing
 - Continue reading from saved history and bookmarks
+- Choose left-to-right or right-to-left reading and page, width, height, or original-size fitting
+- Switch between single-page and double-page spreads; zoom ranges from 50% to 300%
 - Toggle between reading controls and a sleek desktop interface
 - Keep compatibility with existing stored library and progress data from the previous app version
 
