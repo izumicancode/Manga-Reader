@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Library, History as HistoryIcon, Settings as SettingsIcon, Search, BookMarked } from 'lucide-react'
 import { useApp, type SortKey, type StatusFilter, type Tab } from '@/store'
@@ -15,8 +16,20 @@ const TONE_DOT = { neutral: 'bg-muted-foreground', active: 'bg-primary animate-p
 
 export function TopBar(): JSX.Element {
   const { tab, setTab, books, status, search, category, statusFilter, sort, setFilter } = useApp()
+  const searchRef = useRef<HTMLInputElement>(null)
   const categories = [...new Set(books.map((b) => b.category || 'Uncategorized'))].sort()
   const mac = window.api.platform === 'darwin'
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'k' || useApp.getState().reader) return
+      event.preventDefault()
+      setTab('library')
+      searchRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [setTab])
 
   return (
     <header className={cn('drag-region shrink-0 border-b bg-card/70 backdrop-blur-xl', mac && 'pt-2')}>
@@ -65,6 +78,7 @@ export function TopBar(): JSX.Element {
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
+              ref={searchRef}
               type="search"
               value={search}
               onChange={(e) => setFilter({ search: e.target.value })}
