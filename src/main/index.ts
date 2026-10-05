@@ -50,6 +50,11 @@ const thumbDir = (): string => {
 }
 const hashId = (s: string): string => crypto.createHash('sha256').update(s).digest('hex').slice(0, 16)
 
+function getBook(bookId: unknown): Book | undefined {
+  if (typeof bookId !== 'string' || !/^[a-f0-9]{16}$/.test(bookId)) return undefined
+  return libraryStore.get(`books.${bookId}`) as Book | undefined
+}
+
 function trimMap<K, V>(map: Map<K, V>, max: number): void {
   while (map.size > max) {
     const oldest = map.keys().next().value
@@ -334,23 +339,23 @@ ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
 
 ipcMain.handle('get-library', () => Object.values(libraryStore.get('books', {}) as Record<string, Book>))
 
-ipcMain.handle('toggle-favorite', (_e, bookId: string) => {
+ipcMain.handle('toggle-favorite', (_e, bookId: unknown): boolean | null => {
   try {
-    const book = libraryStore.get(`books.${bookId}`) as Book | undefined
-    if (!book) return false
+    const book = getBook(bookId)
+    if (!book) return null
     book.favorite = !book.favorite
     libraryStore.set(`books.${bookId}`, book)
     return book.favorite
   } catch (err) {
     console.error('toggle-favorite failed', (err as Error).message)
-    return false
+    return null
   }
 })
 
 // ---------- IPC: reading ----------
-ipcMain.handle('open-book', async (_e, bookId: string): Promise<OpenBookResult> => {
+ipcMain.handle('open-book', async (_e, bookId: unknown): Promise<OpenBookResult> => {
   try {
-    const book = libraryStore.get(`books.${bookId}`) as Book | undefined
+    const book = getBook(bookId)
     if (!book || !fs.existsSync(book.filePath)) return { error: 'missing-file' }
     const pages = await sourcePages(book.filePath, book.type ?? sourceType(book.filePath)!)
     if (!pages.length) return { error: 'no-pages' }
@@ -366,20 +371,25 @@ ipcMain.handle('open-book', async (_e, bookId: string): Promise<OpenBookResult> 
   }
 })
 
-ipcMain.handle('save-progress', (_e, bookId: string, page: number, percent: number) => {
+ipcMain.handle('save-progress', (_e, bookId: unknown, page: unknown, percent: unknown) => {
+  const book = getBook(bookId)
+  if (!book || typeof page !== 'number' || !Number.isSafeInteger(page) || page < 0 || page >= book.pageCount ||
+      typeof percent !== 'number' || !Number.isFinite(percent) || percent < 0 || percent > 1) return false
   try {
-    historyStore.set(bookId, { ...(historyStore.get(bookId, {}) as HistoryEntry), page, percent, lastReadAt: Date.now() })
+    historyStore.set(book.id, { ...(historyStore.get(book.id, {}) as HistoryEntry), page, percent, lastReadAt: Date.now() })
     return true
   } catch { return false }
 })
 
-ipcMain.handle('toggle-bookmark', (_e, bookId: string, page: number) => {
+ipcMain.handle('toggle-bookmark', (_e, bookId: unknown, page: unknown) => {
+  const book = getBook(bookId)
+  if (!book || typeof page !== 'number' || !Number.isSafeInteger(page) || page < 0 || page >= book.pageCount) return false
   try {
-    const history = historyStore.get(bookId, {}) as HistoryEntry
+    const history = historyStore.get(book.id, {}) as HistoryEntry
     const bookmarks = Array.isArray(history.bookmarks) ? [...history.bookmarks] : []
     const i = bookmarks.indexOf(page)
     if (i >= 0) bookmarks.splice(i, 1); else bookmarks.push(page)
-    historyStore.set(bookId, { ...history, bookmarks: bookmarks.sort((a, b) => a - b) })
+    historyStore.set(book.id, { ...history, bookmarks: bookmarks.sort((a, b) => a - b) })
     return i < 0
   } catch { return false }
 })
@@ -462,7 +472,7 @@ function registerImageProtocols(): void {
   protocol.handle('page', async (request) => {
     try {
       const url = new URL(request.url)
-      const book = libraryStore.get(`books.${url.hostname}`) as Book | undefined
+      const book = getBook(url.hostname)
       const [version, ...segments] = url.pathname.split('/').filter(Boolean)
       const pageName = decodeURIComponent(segments.join('/'))
       if (!book || version !== book.sourceVersion || !pageName) return notFound()
@@ -479,7 +489,7 @@ function registerImageProtocols(): void {
   protocol.handle('cover', async (request) => {
     try {
       const url = new URL(request.url)
-      const book = libraryStore.get(`books.${url.hostname}`) as Book | undefined
+      const book = getBook(url.hostname)
       const [version] = url.pathname.split('/').filter(Boolean)
       if (!book || version !== book.sourceVersion) return notFound()
       if (!book?.cover || !fs.existsSync(book.cover)) return notFound()

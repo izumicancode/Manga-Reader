@@ -89,13 +89,13 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase()
-      if (k === 'arrowright' || k === 'd') turn('right')
-      else if (k === 'arrowleft' || k === 'a') turn('left')
+      if (k === 'arrowright' || k === 'd') { e.preventDefault(); turn('right') }
+      else if (k === 'arrowleft' || k === 'a') { e.preventDefault(); turn('left') }
       else if (k === 't') { if (toolbar) { clearTimeout(hideTimer.current); setToolbar(false) } else showToolbar(); return }
       else if (k === 'f' && e.ctrlKey && e.shiftKey) { e.preventDefault(); void toggleFullscreen() }
-      else if (k === 'f') cycleFit()
-      else if (k === '+' || k === '=') changeZoom(0.1)
-      else if (k === '-') changeZoom(-0.1)
+      else if (k === 'f') { e.preventDefault(); cycleFit() }
+      else if (k === '+' || k === '=') { e.preventDefault(); changeZoom(0.1) }
+      else if (k === '-') { e.preventDefault(); changeZoom(-0.1) }
       else if (k === 'b') void toggleBookmark()
       else if (k === 's') setSpread((v) => !v)
       else if (e.key === 'Escape') { if (fullscreen) void toggleFullscreen(); else closeReader() }
@@ -171,11 +171,19 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
       </div>
 
       {/* invisible click zones for quick page turning */}
-      <button aria-label="Previous side" className="absolute inset-y-16 left-0 z-10 w-[18%] cursor-w-resize opacity-0" onClick={() => turn('left')} />
-      <button aria-label="Next side" className="absolute inset-y-16 right-0 z-10 w-[18%] cursor-e-resize opacity-0" onClick={() => turn('right')} />
+      <button type="button" aria-hidden="true" tabIndex={-1} className="absolute inset-y-16 left-0 z-10 w-[18%] cursor-w-resize opacity-0" onClick={() => turn('left')} />
+      <button type="button" aria-hidden="true" tabIndex={-1} className="absolute inset-y-16 right-0 z-10 w-[18%] cursor-e-resize opacity-0" onClick={() => turn('right')} />
 
       {/* thin progress line always visible */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-0.5 bg-white/10">
+      <div
+        role="progressbar"
+        aria-label="Reading progress"
+        aria-valuemin={1}
+        aria-valuemax={pages.length}
+        aria-valuenow={index + 1}
+        aria-valuetext={`Page ${index + 1} of ${pages.length}`}
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-0.5 bg-white/10"
+      >
         <motion.div className="h-full bg-primary" animate={{ width: `${((index + 1) / pages.length) * 100}%` }} transition={{ duration: 0.25 }} />
       </div>
 
@@ -193,22 +201,22 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
             <div className="min-w-0 flex-1 truncate text-sm font-medium" title={book.title}>{book.title}</div>
 
             <div className="flex flex-wrap items-center gap-1.5">
-              <Button variant="overlay" size="sm" onClick={() => turn('left')}><ChevronLeft /></Button>
-              <span className="min-w-16 text-center text-xs tabular-nums text-white/80">{index + 1} / {pages.length}</span>
-              <Button variant="overlay" size="sm" onClick={() => turn('right')}><ChevronRight /></Button>
+              <Button variant="overlay" size="sm" aria-label="Previous page" onClick={() => turn('left')}><ChevronLeft /></Button>
+              <span aria-live="polite" aria-atomic="true" className="min-w-16 text-center text-xs tabular-nums text-white/80">{index + 1} / {pages.length}</span>
+              <Button variant="overlay" size="sm" aria-label="Next page" onClick={() => turn('right')}><ChevronRight /></Button>
               <span className="mx-1 h-5 w-px bg-white/15" />
-              <Button variant="overlay" size="sm" onClick={cycleFit} title="Cycle fit mode (F)"><Scaling /> {FIT_LABELS[fit]}</Button>
-              <Button variant="overlay" size="sm" onClick={() => changeZoom(-0.1)} title="Zoom out (−)"><Minus /></Button>
+              <Button variant="overlay" size="sm" onClick={cycleFit} title="Cycle fit mode (F)" aria-label={`Page fit: ${FIT_LABELS[fit]}`}><Scaling /> {FIT_LABELS[fit]}</Button>
+              <Button variant="overlay" size="sm" aria-label="Zoom out" onClick={() => changeZoom(-0.1)} title="Zoom out (−)"><Minus /></Button>
               <span className="w-10 text-center text-xs tabular-nums text-white/80">{Math.round(zoom * 100)}%</span>
-              <Button variant="overlay" size="sm" onClick={() => changeZoom(0.1)} title="Zoom in (+)"><Plus /></Button>
+              <Button variant="overlay" size="sm" aria-label="Zoom in" onClick={() => changeZoom(0.1)} title="Zoom in (+)"><Plus /></Button>
               <span className="mx-1 h-5 w-px bg-white/15" />
-              <Button variant="overlay" size="sm" onClick={() => void toggleBookmark()} title="Bookmark page (B)" className={cn(bookmarked && 'text-primary')}>
+              <Button variant="overlay" size="sm" aria-label={bookmarked ? 'Remove page bookmark' : 'Bookmark page'} aria-pressed={bookmarked} onClick={() => void toggleBookmark()} title="Bookmark page (B)" className={cn(bookmarked && 'text-primary')}>
                 {bookmarked ? <BookmarkCheck /> : <Bookmark />}
               </Button>
-              <Button variant="overlay" size="sm" onClick={() => setSpread((v) => !v)} title="Toggle double-page view (S)">
+              <Button variant="overlay" size="sm" aria-label={spread ? 'Show single pages' : 'Show double-page spread'} aria-pressed={spread} onClick={() => setSpread((v) => !v)} title="Toggle double-page view (S)">
                 {spread ? <Square /> : <Columns2 />}
               </Button>
-              <Button variant="overlay" size="sm" onClick={() => void toggleFullscreen()} title="Fullscreen (Ctrl+Shift+F)">
+              <Button variant="overlay" size="sm" aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} onClick={() => void toggleFullscreen()} title="Fullscreen (Ctrl+Shift+F)">
                 {fullscreen ? <Minimize /> : <Maximize />}
               </Button>
             </div>

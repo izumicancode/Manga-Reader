@@ -127,7 +127,11 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   toggleFavorite: async (book) => {
-    const favorite = await safe(window.api.toggleFavorite(book.id), book.favorite, "Couldn't update favorite.")
+    const favorite = await safe(window.api.toggleFavorite(book.id), null, "Couldn't update favorite.")
+    if (favorite === null) {
+      toast.error("Couldn't update favorite.")
+      return
+    }
     set({ books: get().books.map((b) => (b.id === book.id ? { ...b, favorite } : b)) })
   },
 

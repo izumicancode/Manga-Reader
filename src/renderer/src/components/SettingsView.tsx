@@ -59,25 +59,37 @@ function Segmented<K extends keyof Prefs>({ prefKey, options }: {
 
 function PinDialog({ mode, onClose }: { mode: 'set' | 'disable' | null; onClose: () => void }): JSX.Element {
   const [value, setValue] = useState('')
+  const [busy, setBusy] = useState(false)
   const setPinEnabled = useApp((s) => s.setPinEnabled)
   const setting = mode === 'set'
 
   const close = (): void => { setValue(''); onClose() }
 
   const confirm = async (): Promise<void> => {
+    if (busy) return
     if (setting) {
       if (!/^\d{4}$/.test(value)) return void toast.error('PIN must be exactly 4 digits.')
-      if (await window.api.pinSet(value)) { setPinEnabled(true); toast.success('PIN lock enabled.'); close() }
-      else toast.error("Couldn't set PIN. Try again.")
-    } else if (await window.api.pinDisable(value)) {
-      setPinEnabled(false); toast.success('PIN lock disabled.'); close()
-    } else {
-      toast.error('Incorrect PIN.'); setValue('')
+    }
+    setBusy(true)
+    try {
+      const success = setting ? await window.api.pinSet(value) : await window.api.pinDisable(value)
+      if (success) {
+        setPinEnabled(setting)
+        toast.success(setting ? 'PIN lock enabled.' : 'PIN lock disabled.')
+        close()
+      } else {
+        toast.error(setting ? "Couldn't set PIN. Try again." : 'Incorrect PIN.')
+        setValue('')
+      }
+    } catch {
+      toast.error(setting ? "Couldn't set PIN. Try again." : "Couldn't verify PIN.")
+    } finally {
+      setBusy(false)
     }
   }
 
   return (
-    <Dialog open={mode !== null} onOpenChange={(open) => !open && close()}>
+    <Dialog open={mode !== null} onOpenChange={(open) => !open && !busy && close()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{setting ? 'Set a PIN' : 'Disable PIN lock'}</DialogTitle>
@@ -87,15 +99,17 @@ function PinDialog({ mode, onClose }: { mode: 'set' | 'disable' | null; onClose:
           autoFocus
           type="password"
           inputMode="numeric"
-          maxLength={setting ? 4 : 6}
+          maxLength={4}
+          aria-label={setting ? 'New four-digit PIN' : 'Current four-digit PIN'}
+          disabled={busy}
           placeholder={setting ? 'Enter 4-digit PIN' : 'Current PIN'}
           value={value}
           onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))}
           onKeyDown={(e) => e.key === 'Enter' && void confirm()}
         />
         <DialogFooter>
-          <Button variant="secondary" onClick={close}>Cancel</Button>
-          <Button onClick={() => void confirm()}>Confirm</Button>
+          <Button variant="secondary" disabled={busy} onClick={close}>Cancel</Button>
+          <Button disabled={busy} onClick={() => void confirm()}>{busy ? 'Working…' : 'Confirm'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -108,6 +122,7 @@ export function SettingsView(): JSX.Element {
   const [pinMode, setPinMode] = useState<'set' | 'disable' | null>(null)
   const [delay, setDelay] = useState(s.toolbarHideDelay)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmClearHistory, setConfirmClearHistory] = useState(false)
 
   useEffect(() => setDelay(s.toolbarHideDelay), [s.toolbarHideDelay])
 
@@ -121,7 +136,7 @@ export function SettingsView(): JSX.Element {
           <Button variant="secondary" onClick={() => void refreshLibrary()}>Rescan Now</Button>
         </Row>
         <Row title="Reading history" sub="Remove all saved progress from Continue Reading.">
-          <Button variant="destructive" onClick={() => { void clearHistory().then((cleared) => { if (cleared) toast.success('History cleared.') }) }}>Clear History</Button>
+          <Button variant="destructive" onClick={() => setConfirmClearHistory(true)}>Clear History</Button>
         </Row>
       </Section>
 
@@ -234,6 +249,21 @@ export function SettingsView(): JSX.Element {
           <DialogFooter>
             <Button variant="secondary" onClick={() => setConfirmReset(false)}>Cancel</Button>
             <Button variant="destructive" onClick={() => { setConfirmReset(false); void resetSettings() }}>Reset</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={confirmClearHistory} onOpenChange={setConfirmClearHistory}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clear reading history?</DialogTitle>
+            <DialogDescription>All saved reading progress and bookmarks will be removed.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setConfirmClearHistory(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => {
+              setConfirmClearHistory(false)
+              void clearHistory().then((cleared) => { if (cleared) toast.success('History cleared.') })
+            }}>Clear History</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
