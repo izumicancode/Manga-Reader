@@ -36,8 +36,9 @@ const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.a
 const ARCHIVE_EXT = new Set(['.cbz', '.zip', '.cbr', '.rar'])
 const RAR_EXT = new Set(['.cbr', '.rar'])
 const MAX_PAGE_CACHE_BYTES = 128 * 1024 * 1024
+const MAX_RAR_CACHE_BYTES = 512 * 1024 * 1024
 
-interface RarEntry { pages: string[]; content: Map<string, Buffer> }
+interface RarEntry { pages: string[]; content: Map<string, Buffer>; sizeBytes: number }
 const rarCache = new Map<string, RarEntry>()
 const zipEntryCache = new Map<string, Map<string, AdmZip.IZipEntry>>()
 const pageBinaryCache = new Map<string, Buffer>()
@@ -73,6 +74,16 @@ function trimBufferMap(map: Map<string, Buffer>, maxBytes: number): void {
     if (oldest === undefined) break
     totalBytes -= map.get(oldest)?.byteLength ?? 0
     map.delete(oldest)
+  }
+}
+
+function trimRarCache(maxBytes: number, maxEntries: number): void {
+  let totalBytes = [...rarCache.values()].reduce((total, entry) => total + entry.sizeBytes, 0)
+  while (rarCache.size > 1 && (totalBytes > maxBytes || rarCache.size > maxEntries)) {
+    const oldest = rarCache.keys().next().value
+    if (oldest === undefined) break
+    totalBytes -= rarCache.get(oldest)?.sizeBytes ?? 0
+    rarCache.delete(oldest)
   }
 }
 
@@ -209,9 +220,10 @@ async function loadRar(filePath: string): Promise<RarEntry> {
   for (const file of extracted.files) {
     if (file.extraction) content.set(file.fileHeader.name, Buffer.from(file.extraction))
   }
-  const result: RarEntry = { pages: headers.map((h) => h.name), content }
+  const sizeBytes = [...content.values()].reduce((total, page) => total + page.byteLength, 0)
+  const result: RarEntry = { pages: headers.map((h) => h.name), content, sizeBytes }
   rarCache.set(key, result)
-  trimMap(rarCache, 12)
+  trimRarCache(MAX_RAR_CACHE_BYTES, 12)
   return result
 }
 
