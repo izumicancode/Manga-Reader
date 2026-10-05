@@ -80,6 +80,12 @@ npm run build
 
 ```
 
+### Typecheck
+
+```bash
+npm run typecheck
+```
+
 ### Package distributables
 
 ```bash
