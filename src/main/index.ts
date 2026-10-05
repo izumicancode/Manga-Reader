@@ -30,6 +30,7 @@ let fallbackPollTimer: NodeJS.Timeout | null = null
 let watchDebounceTimer: NodeJS.Timeout | undefined
 let lastLibrarySignature = ''
 let signatureRequestId = 0
+let libraryScanId = 0
 
 const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif'])
 const ARCHIVE_EXT = new Set(['.cbz', '.zip', '.cbr', '.rar'])
@@ -260,6 +261,7 @@ async function extractCoverToCache(
 ipcMain.handle('choose-library-folder', async () => {
   const res = await dialog.showOpenDialog({ properties: ['openDirectory'] })
   if (res.canceled || !res.filePaths.length) return null
+  libraryScanId += 1
   store.set('libraryFolder', res.filePaths[0])
   startLibraryWatcher()
   return res.filePaths[0]
@@ -313,6 +315,7 @@ ipcMain.handle('open-external', async (_e, value: unknown) => {
 })
 
 ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
+  const scanId = ++libraryScanId
   const folder = store.get('libraryFolder') as string | undefined
   if (!folder || !fs.existsSync(folder)) return { books: [], error: 'no-folder' }
 
@@ -322,6 +325,9 @@ ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
   const failed: string[] = []
   let processed = 0
   for (const filePath of files) {
+    if (scanId !== libraryScanId || store.get('libraryFolder') !== folder) {
+      return { books: Object.values(libraryStore.get('books', {}) as Record<string, Book>), error: null }
+    }
     try {
       const id = hashId(filePath)
       const stat = await fsp.stat(filePath)
@@ -351,6 +357,9 @@ ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
     if (++processed % 20 === 0) await new Promise((r) => setImmediate(r))
   }
 
+  if (scanId !== libraryScanId || store.get('libraryFolder') !== folder) {
+    return { books: Object.values(libraryStore.get('books', {}) as Record<string, Book>), error: null }
+  }
   libraryStore.set('books', books)
   return { books: Object.values(books), error: null, skipped: failed }
 })
