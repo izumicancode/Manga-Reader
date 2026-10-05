@@ -18,6 +18,7 @@ export interface ReaderSession {
 const FALLBACK_SETTINGS: Settings = { ...DEFAULT_PREFS, libraryFolder: null, pinEnabled: false }
 const settingWriteIds = new Map<keyof Prefs, number>()
 let removeLibraryChangedListener: (() => void) | undefined
+let libraryRefreshId = 0
 
 const OPEN_ERRORS: Record<string, string> = {
   'missing-file': 'That file no longer exists on disk. Try rescanning your library.',
@@ -104,11 +105,14 @@ export const useApp = create<AppState>((set, get) => ({
   setFilter: (patch) => set(patch),
 
   refreshLibrary: async ({ quiet = false } = {}) => {
+    const refreshId = ++libraryRefreshId
     set({ status: { text: quiet ? 'Refreshing…' : 'Scanning library…', tone: 'active' } })
     const res = await safe(window.api.scanLibrary(), null, 'Could not scan your library folder.')
     const books = res ? res.books : await safe(window.api.getLibrary(), [], 'Could not load your library.')
+    if (refreshId !== libraryRefreshId) return
     if (res?.skipped?.length) toast(`Skipped ${res.skipped.length} file(s) that couldn't be read.`)
     const history = await safe(window.api.getHistory(), get().history)
+    if (refreshId !== libraryRefreshId) return
     const categories = new Set(books.map((b) => b.category || 'Uncategorized'))
     set({
       books,
