@@ -125,6 +125,10 @@ Configured targets are a Windows NSIS installer, macOS DMG, and Linux AppImage a
 
 The app preserves the same Electron store keys and disk layout used by the previous version, so existing library entries, progress data, bookmarks, and PIN settings can carry over with minimal friction.
 
+## Local Data
+
+Settings, the library index, and reading history are stored in Electron's per-user `userData` directory. Generated cover images are cached there as well; original manga files remain in the folders you selected.
+
 ## Security Note
 
 The app PIN protects the UI layer but does not encrypt files on disk. It is intended as a local access control mechanism, not a full disk-encryption feature.
