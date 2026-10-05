@@ -430,6 +430,8 @@ ipcMain.handle('toggle-fullscreen', (event) => {
 // ---------- IPC: PIN ----------
 const scrypt = (pin: string, salt: string): string => crypto.scryptSync(pin, salt, 32).toString('hex')
 const legacyHash = (pin: string): string => hashId('salted::' + pin) // v2 config compatibility
+let pinFailures = 0
+let pinLockedUntil = 0
 
 function safeEqual(a: string, b: string): boolean {
   const A = Buffer.from(a), B = Buffer.from(b)
@@ -449,6 +451,18 @@ function checkPin(pin: unknown): boolean {
   return true
 }
 
+function verifyPinWithLimit(pin: unknown): boolean {
+  const now = Date.now()
+  if (pinLockedUntil > now) return false
+  if (pinLockedUntil) { pinLockedUntil = 0; pinFailures = 0 }
+  if (checkPin(pin)) { pinFailures = 0; return true }
+  if (++pinFailures >= 5) {
+    pinFailures = 0
+    pinLockedUntil = now + 30_000
+  }
+  return false
+}
+
 ipcMain.handle('pin-status', () => ({ enabled: !!store.get('pinHash') }))
 ipcMain.handle('pin-set', (_e, pin: unknown) => {
   if (store.get('pinHash') || typeof pin !== 'string' || !/^\d{4}$/.test(pin)) return false
@@ -458,11 +472,11 @@ ipcMain.handle('pin-set', (_e, pin: unknown) => {
   return true
 })
 ipcMain.handle('pin-disable', (_e, pin: unknown) => {
-  if (!store.get('pinHash') || !checkPin(pin)) return false
+  if (!store.get('pinHash') || !verifyPinWithLimit(pin)) return false
   store.delete('pinHash'); store.delete('pinSalt')
   return true
 })
-ipcMain.handle('pin-verify', (_e, pin: unknown) => checkPin(pin))
+ipcMain.handle('pin-verify', (_e, pin: unknown) => verifyPinWithLimit(pin))
 
 // ---------- image protocols ----------
 const MIME: Record<string, string> = { jpg: 'jpeg', jpeg: 'jpeg', png: 'png', webp: 'webp', gif: 'gif', bmp: 'bmp', avif: 'avif' }
