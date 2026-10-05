@@ -19,6 +19,7 @@ const FALLBACK_SETTINGS: Settings = { ...DEFAULT_PREFS, libraryFolder: null, pin
 const settingWriteIds = new Map<keyof Prefs, number>()
 let removeLibraryChangedListener: (() => void) | undefined
 let libraryRefreshId = 0
+let bootPromise: Promise<void> | null = null
 
 const OPEN_ERRORS: Record<string, string> = {
   'missing-file': 'That file no longer exists on disk. Try rescanning your library.',
@@ -78,12 +79,17 @@ export const useApp = create<AppState>((set, get) => ({
   sort: 'title',
   reader: null,
 
-  boot: async () => {
-    const settings = await safe(window.api.getSettings(), FALLBACK_SETTINGS)
-    set({ settings: { ...FALLBACK_SETTINGS, ...settings } })
-    const pin = await safe(window.api.pinStatus(), { enabled: false })
-    if (pin.enabled) set({ phase: 'locked' })
-    else await get().enterApp()
+  boot: () => {
+    if (!bootPromise) {
+      bootPromise = (async () => {
+        const settings = await safe(window.api.getSettings(), FALLBACK_SETTINGS)
+        set({ settings: { ...FALLBACK_SETTINGS, ...settings } })
+        const pin = await safe(window.api.pinStatus(), { enabled: false })
+        if (pin.enabled) set({ phase: 'locked' })
+        else await get().enterApp()
+      })()
+    }
+    return bootPromise
   },
 
   enterApp: async () => {
