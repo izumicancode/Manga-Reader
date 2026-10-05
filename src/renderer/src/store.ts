@@ -127,7 +127,7 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   toggleFavorite: async (book) => {
-    const favorite = await safe(window.api.toggleFavorite(book.id), null, "Couldn't update favorite.")
+    const favorite = await safe(window.api.toggleFavorite(book.id), null)
     if (favorite === null) {
       toast.error("Couldn't update favorite.")
       return
