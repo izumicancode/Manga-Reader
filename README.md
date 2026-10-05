@@ -14,7 +14,7 @@ Manga Reader indexes local files in place, so choosing a library folder does not
 - Supported sources: folders, JPG/JPEG, PNG, WebP, GIF, BMP, AVIF, ZIP/CBZ, and RAR/CBR archives
 - Reading progress and history tracking
 - Pin-protected lock screen for app access
-- Customizable accent color and polished UI
+- Customize the light/dark theme, accent color, cover size, and interface animations
 - Built on Electron + Vite for a modern desktop experience
 
 ## Features
