@@ -527,6 +527,8 @@ const notFound = (): Response => new Response(null, { status: 404 })
 const IMG_HEADERS = { 'cache-control': 'public, max-age=31536000, immutable' }
 
 async function resolvePageBuffer(book: Book, pageName: string): Promise<Buffer | null> {
+  if (!isImage(pageName)) return null
+  if (book.type === 'folder' && path.basename(pageName) !== pageName) return null
   const key = `${book.filePath}:${pageName}:${book.sourceVersion}`
   const cached = pageBinaryCache.get(key)
   if (cached) return cached
