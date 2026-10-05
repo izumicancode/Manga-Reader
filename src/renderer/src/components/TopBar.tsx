@@ -83,6 +83,12 @@ export function TopBar(): JSX.Element {
               type="search"
               value={search}
               onChange={(e) => setFilter({ search: e.target.value })}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && search) {
+                  event.preventDefault()
+                  setFilter({ search: '' })
+                }
+              }}
               placeholder="Search titles…"
               aria-label="Search titles"
               className="w-52 pl-8"
