@@ -17,7 +17,7 @@ const api = {
     ipcRenderer.on('library-changed', listener)
     return () => ipcRenderer.removeListener('library-changed', listener)
   },
-  toggleFavorite: (id: string) => invoke<boolean>('toggle-favorite', id),
+  toggleFavorite: (id: string) => invoke<boolean | null>('toggle-favorite', id),
   openBook: (id: string) => invoke<OpenBookResult>('open-book', id),
   saveProgress: (id: string, page: number, percent: number) => invoke<boolean>('save-progress', id, page, percent),
   toggleBookmark: (id: string, page: number) => invoke<boolean>('toggle-bookmark', id, page),

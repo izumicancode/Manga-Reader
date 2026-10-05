@@ -359,7 +359,7 @@ ipcMain.handle('open-book', async (_e, bookId: unknown): Promise<OpenBookResult>
     if (!book || !fs.existsSync(book.filePath)) return { error: 'missing-file' }
     const pages = await sourcePages(book.filePath, book.type ?? sourceType(book.filePath)!)
     if (!pages.length) return { error: 'no-pages' }
-    const hist = historyStore.get(bookId, { page: 0 }) as HistoryEntry
+    const hist = historyStore.get(book.id, { page: 0 }) as HistoryEntry
     return {
       error: null, book, pages,
       resumePage: Math.min(hist.page || 0, pages.length - 1),
