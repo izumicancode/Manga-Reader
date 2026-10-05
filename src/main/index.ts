@@ -35,6 +35,7 @@ let libraryScanId = 0
 const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif'])
 const ARCHIVE_EXT = new Set(['.cbz', '.zip', '.cbr', '.rar'])
 const RAR_EXT = new Set(['.cbr', '.rar'])
+const MAX_PAGE_CACHE_BYTES = 128 * 1024 * 1024
 
 interface RarEntry { pages: string[]; content: Map<string, Buffer> }
 const rarCache = new Map<string, RarEntry>()
@@ -61,6 +62,16 @@ function trimMap<K, V>(map: Map<K, V>, max: number): void {
   while (map.size > max) {
     const oldest = map.keys().next().value
     if (oldest === undefined) break
+    map.delete(oldest)
+  }
+}
+
+function trimBufferMap(map: Map<string, Buffer>, maxBytes: number): void {
+  let totalBytes = [...map.values()].reduce((total, buffer) => total + buffer.byteLength, 0)
+  while (totalBytes > maxBytes) {
+    const oldest = map.keys().next().value
+    if (oldest === undefined) break
+    totalBytes -= map.get(oldest)?.byteLength ?? 0
     map.delete(oldest)
   }
 }
@@ -532,7 +543,7 @@ async function resolvePageBuffer(book: Book, pageName: string): Promise<Buffer |
   }
   if (!buf) return null
   pageBinaryCache.set(key, buf)
-  trimMap(pageBinaryCache, 96)
+  trimBufferMap(pageBinaryCache, MAX_PAGE_CACHE_BYTES)
   return buf
 }
 
