@@ -57,7 +57,7 @@ export function LibraryView(): JSX.Element {
     const q = search.trim().toLowerCase()
     return books
       .filter((b) => {
-        if (q && !b.title.toLowerCase().includes(q)) return false
+        if (q && ![b.title, b.category].some((field) => field.toLowerCase().includes(q))) return false
         if (category !== 'all' && (b.category || 'Uncategorized') !== category) return false
         if (statusFilter === 'favorites' && !b.favorite) return false
         if (statusFilter === 'unread' && history[b.id]) return false
