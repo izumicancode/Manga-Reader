@@ -28,6 +28,7 @@ Manga Reader indexes local files in place, so choosing a library folder does not
 - View cover art and metadata during browsing
 - Continue reading from saved history and bookmarks
 - Save the current page and bookmarks per title; Continue Reading is ordered by most recent progress update
+- Clearing reading history also deletes saved bookmarks; resetting appearance and reading preferences leaves history untouched
 - Choose left-to-right or right-to-left reading and page, width, height, or original-size fitting
 - Switch between single-page and double-page spreads; zoom ranges from 50% to 300%
 - Reader keys: arrows or `A`/`D` turn pages, `Home`/`End` jump to either end, `F` changes fit, `+`/`-` zoom, `B` toggles a bookmark, `S` toggles spreads, and `T` toggles the toolbar
