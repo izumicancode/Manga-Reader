@@ -538,6 +538,7 @@ function createWindow(): void {
       win.reload()
     }
   })
+  win.webContents.on('will-navigate', (event) => event.preventDefault())
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) void shell.openExternal(url)
     return { action: 'deny' }
