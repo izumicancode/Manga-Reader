@@ -64,10 +64,11 @@ export function LibraryView(): JSX.Element {
         return true
       })
       .sort((a, b) => {
-        if (sort === 'favorites') return Number(b.favorite) - Number(a.favorite) || a.title.localeCompare(b.title)
-        if (sort === 'progress') return (history[b.id]?.percent || 0) - (history[a.id]?.percent || 0)
-        if (sort === 'recent') return (history[b.id]?.lastReadAt || 0) - (history[a.id]?.lastReadAt || 0)
-        return a.title.localeCompare(b.title, undefined, { numeric: true })
+        const byTitle = a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
+        if (sort === 'favorites') return Number(b.favorite) - Number(a.favorite) || byTitle
+        if (sort === 'progress') return (history[b.id]?.percent || 0) - (history[a.id]?.percent || 0) || byTitle
+        if (sort === 'recent') return (history[b.id]?.lastReadAt || 0) - (history[a.id]?.lastReadAt || 0) || byTitle
+        return byTitle
       })
       .map((b) => b.id)
   }, [books, history, search, category, statusFilter, sort])
