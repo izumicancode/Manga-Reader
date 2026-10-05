@@ -90,7 +90,13 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
     }
     setBookmarks((b) => (added ? [...b, index].sort((x, y) => x - y) : b.filter((p) => p !== index)))
   }, [book.id, index])
-  const toggleFullscreen = useCallback(async () => setFullscreen(await window.api.toggleFullscreen()), [])
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      setFullscreen(await window.api.toggleFullscreen())
+    } catch {
+      toast.error("Couldn't change fullscreen mode.")
+    }
+  }, [])
 
   // ---- keyboard ----
   useEffect(() => {
