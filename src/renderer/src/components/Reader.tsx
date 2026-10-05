@@ -38,6 +38,7 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
   const [fullscreen, setFullscreen] = useState(false)
   const hideTimer = useRef<ReturnType<typeof setTimeout>>()
   const preloaded = useRef(new Set<string>())
+  const progressFailureReported = useRef(false)
 
   useEffect(() => window.api.onFullscreenChange(setFullscreen), [])
 
@@ -67,7 +68,15 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
 
   // ---- persistence + read-ahead prefetch ----
   useEffect(() => {
-    void window.api.saveProgress(book.id, index, (index + 1) / pages.length)
+    const reportProgressFailure = (): void => {
+      if (progressFailureReported.current) return
+      progressFailureReported.current = true
+      toast.error("Couldn't save reading progress.")
+    }
+    void window.api.saveProgress(book.id, index, (index + 1) / pages.length).then((saved) => {
+      if (saved) progressFailureReported.current = false
+      else reportProgressFailure()
+    }).catch(reportProgressFailure)
     for (let i = Math.max(0, index - PRELOAD_BEHIND); i <= Math.min(pages.length - 1, index + PRELOAD_AHEAD + (spread ? 1 : 0)); i++) {
       const url = urlFor(i)
       if (!url || preloaded.current.has(url)) continue
