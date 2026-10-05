@@ -17,12 +17,12 @@ const ACCENT_PRESETS = ['#e0555a', '#e08a3c', '#d8c445', '#5fb87a', '#4a9fd8', '
 
 function Row({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }): JSX.Element {
   return (
-    <div className="flex items-center justify-between gap-6 border-t py-3.5 first:border-t-0 first:pt-0">
+    <div className="flex flex-col items-start gap-3 border-t py-3.5 first:border-t-0 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="min-w-0">
         <div className="text-sm font-medium">{title}</div>
         {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="flex w-full justify-end sm:block sm:w-auto sm:shrink-0">{children}</div>
     </div>
   )
 }
@@ -146,7 +146,7 @@ export function SettingsView(): JSX.Element {
           <Segmented prefKey="theme" label="Theme" options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} />
         </Row>
         <Row title="Accent Color">
-          <div className="flex items-center gap-2">
+          <div className="flex max-w-full flex-wrap items-center gap-2 sm:flex-nowrap">
             {ACCENT_PRESETS.map((c) => (
               <motion.button
                 key={c}
