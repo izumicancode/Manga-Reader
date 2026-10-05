@@ -119,7 +119,7 @@ function PinDialog({ mode, onClose }: { mode: 'set' | 'disable' | null; onClose:
 
 export function SettingsView(): JSX.Element {
   const s = useApp((st) => st.settings)
-  const { updateSetting, pickFolder, refreshLibrary, clearHistory, resetSettings } = useApp()
+  const { updateSetting, pickFolder, refreshLibrary, clearHistory, resetSettings, status } = useApp()
   const [pinMode, setPinMode] = useState<'set' | 'disable' | null>(null)
   const [delay, setDelay] = useState(s.toolbarHideDelay)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -134,7 +134,9 @@ export function SettingsView(): JSX.Element {
           <Button variant="secondary" onClick={() => void pickFolder()}>Change…</Button>
         </Row>
         <Row title="Rescan for new files">
-          <Button variant="secondary" onClick={() => void refreshLibrary()}>Rescan Now</Button>
+          <Button variant="secondary" disabled={status.tone === 'active'} onClick={() => void refreshLibrary()}>
+            {status.tone === 'active' ? 'Scanning…' : 'Rescan Now'}
+          </Button>
         </Row>
         <Row title="Reading history" sub="Remove all saved progress from Continue Reading.">
           <Button variant="destructive" onClick={() => setConfirmClearHistory(true)}>Clear History</Button>

@@ -51,7 +51,7 @@ export function BookGrid({ ids }: { ids: string[] }): JSX.Element {
 }
 
 export function LibraryView(): JSX.Element {
-  const { books, history, settings, search, category, statusFilter, sort, pickFolder, refreshLibrary } = useApp()
+  const { books, history, settings, status, search, category, statusFilter, sort, pickFolder, refreshLibrary } = useApp()
 
   const ids = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -75,6 +75,7 @@ export function LibraryView(): JSX.Element {
 
   if (!books.length) {
     const hasFolder = Boolean(settings.libraryFolder)
+    const scanning = status.tone === 'active'
     return (
       <EmptyState
         icon={<FolderOpen className="h-8 w-8" />}
@@ -83,7 +84,7 @@ export function LibraryView(): JSX.Element {
           ? 'The selected folder has no readable manga yet. Add image files or supported archives, then rescan.'
           : 'Choose the folder that contains your manga. Subfolders and ZIP, CBZ, RAR, and CBR files are supported.'}
         action={hasFolder
-          ? <Button onClick={() => void refreshLibrary()}>Rescan Library</Button>
+          ? <Button disabled={scanning} onClick={() => void refreshLibrary()}>{scanning ? 'Scanning…' : 'Rescan Library'}</Button>
           : <Button onClick={() => void pickFolder()}>Choose Library Folder</Button>}
       />
     )
