@@ -259,6 +259,17 @@ async function extractCoverToCache(
   }
 }
 
+async function pruneThumbnails(books: Book[]): Promise<void> {
+  const directory = thumbDir()
+  const active = new Set(books.flatMap((book) => book.cover ? [path.resolve(book.cover)] : []))
+  const files = await fsp.readdir(directory).catch(() => [] as string[])
+  await Promise.all(files.map(async (name) => {
+    if (!/^[a-f0-9]{16}-cover\.[a-z0-9]+$/i.test(name)) return
+    const filePath = path.join(directory, name)
+    if (!active.has(path.resolve(filePath))) await fsp.unlink(filePath).catch(() => undefined)
+  }))
+}
+
 // ---------- IPC: library & settings ----------
 ipcMain.handle('choose-library-folder', async () => {
   const res = await dialog.showOpenDialog({ properties: ['openDirectory'] })
@@ -363,7 +374,9 @@ ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
     return { books: Object.values(libraryStore.get('books', {}) as Record<string, Book>), error: null }
   }
   libraryStore.set('books', books)
-  return { books: Object.values(books), error: null, skipped: failed }
+  const scannedBooks = Object.values(books)
+  await pruneThumbnails(scannedBooks)
+  return { books: scannedBooks, error: null, skipped: failed }
 })
 
 ipcMain.handle('get-library', () => Object.values(libraryStore.get('books', {}) as Record<string, Book>))
