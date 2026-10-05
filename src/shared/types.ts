@@ -32,6 +32,7 @@ export interface Book {
   tags: string[]
   mtimeMs: number
   sizeBytes: number
+  sourceVersion: string
 }
 
 export interface HistoryEntry {

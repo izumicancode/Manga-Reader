@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Delete, Lock } from 'lucide-react'
 import { useApp } from '@/store'
@@ -12,12 +12,13 @@ export function LockScreen(): JSX.Element {
   const [error, setError] = useState(false)
   const [shake, setShake] = useState(0)
   const [busy, setBusy] = useState(false)
+  const clearTimer = useRef<ReturnType<typeof setTimeout>>()
 
   const press = useCallback(
     async (key: string) => {
       if (busy) return
-      if (key === 'clear') { setPin(''); return }
-      if (key === 'back') { setPin((p) => p.slice(0, -1)); return }
+      if (key === 'clear') { setPin(''); setError(false); return }
+      if (key === 'back') { setPin((p) => p.slice(0, -1)); setError(false); return }
       if (pin.length >= PIN_LENGTH) return
       const next = pin + key
       setPin(next)
@@ -30,9 +31,12 @@ export function LockScreen(): JSX.Element {
         } else {
           setError(true)
           setShake((n) => n + 1)
-          setTimeout(() => setPin(''), 260)
+          clearTimer.current = setTimeout(() => {
+            setPin('')
+            setBusy(false)
+          }, 260)
         }
-        setBusy(false)
+        if (ok) setBusy(false)
       }
     },
     [pin, busy]
@@ -47,6 +51,8 @@ export function LockScreen(): JSX.Element {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [press])
+
+  useEffect(() => () => clearTimeout(clearTimer.current), [])
 
   return (
     <motion.section
@@ -66,7 +72,7 @@ export function LockScreen(): JSX.Element {
         </div>
         <h1 className="text-lg font-semibold">Enter PIN</h1>
 
-        <div className="flex gap-3" aria-label="PIN entry">
+        <div className="flex gap-3" aria-hidden="true">
           {Array.from({ length: PIN_LENGTH }).map((_, i) => (
             <motion.span
               key={i}
@@ -79,12 +85,17 @@ export function LockScreen(): JSX.Element {
             />
           ))}
         </div>
-        <div className="h-4 text-xs text-destructive">{error ? 'Incorrect PIN' : ''}</div>
+        <div className="h-4 text-xs text-destructive" role={error ? 'alert' : undefined}>
+          {error ? 'Incorrect PIN' : <span className="sr-only" aria-live="polite">{pin.length} of {PIN_LENGTH} digits entered</span>}
+        </div>
 
         <div className="grid grid-cols-3 gap-2">
           {KEYS.map((k) => (
             <motion.button
               key={k}
+              type="button"
+              aria-label={k === 'clear' ? 'Clear PIN' : k === 'back' ? 'Delete last digit' : k}
+              disabled={busy}
               whileTap={{ scale: 0.9 }}
               onClick={() => void press(k)}
               className={cn(

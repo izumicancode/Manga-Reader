@@ -29,8 +29,8 @@ const api = {
   pinDisable: (pin: string) => invoke<boolean>('pin-disable', pin),
   pinVerify: (pin: string) => invoke<boolean>('pin-verify', pin),
   // Images are served by main over cover:// and page:// — these just build URLs.
-  coverUrl: (id: string, mtimeMs: number) => `cover://${id}/${mtimeMs || 0}`,
-  pageUrl: (id: string, mtimeMs: number, page: string) => `page://${id}/${mtimeMs || 0}/${encodeURIComponent(page)}`
+  coverUrl: (id: string, version: string) => `cover://${id}/${version}`,
+  pageUrl: (id: string, version: string, page: string) => `page://${id}/${version}/${encodeURIComponent(page)}`
 }
 
 export type Api = typeof api

@@ -121,7 +121,7 @@ export function SettingsView(): JSX.Element {
           <Button variant="secondary" onClick={() => void refreshLibrary()}>Rescan Now</Button>
         </Row>
         <Row title="Reading history" sub="Remove all saved progress from Continue Reading.">
-          <Button variant="destructive" onClick={() => { void clearHistory(); toast.success('History cleared.') }}>Clear History</Button>
+          <Button variant="destructive" onClick={() => { void clearHistory().then((cleared) => { if (cleared) toast.success('History cleared.') }) }}>Clear History</Button>
         </Row>
       </Section>
 

@@ -54,7 +54,7 @@ interface AppState {
   refreshHistory: () => Promise<void>
   pickFolder: () => Promise<void>
   toggleFavorite: (book: Book) => Promise<void>
-  clearHistory: () => Promise<void>
+  clearHistory: () => Promise<boolean>
   updateSetting: <K extends keyof Prefs>(key: K, value: Prefs[K]) => Promise<void>
   resetSettings: () => Promise<void>
   setPinEnabled: (enabled: boolean) => void
@@ -132,8 +132,11 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   clearHistory: async () => {
+    const previous = get().history
     set({ history: {} })
-    await safe(window.api.clearHistory(), false, "Couldn't clear history.")
+    const cleared = await safe(window.api.clearHistory(), false, "Couldn't clear history.")
+    if (!cleared) set({ history: previous })
+    return cleared
   },
 
   updateSetting: async (key, value) => {

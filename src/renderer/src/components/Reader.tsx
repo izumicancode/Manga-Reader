@@ -39,8 +39,8 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
   const preloaded = useRef(new Set<string>())
 
   const urlFor = useCallback(
-    (i: number) => (i < 0 || i >= pages.length ? null : window.api.pageUrl(book.id, book.mtimeMs, pages[i])),
-    [book.id, book.mtimeMs, pages]
+    (i: number) => (i < 0 || i >= pages.length ? null : window.api.pageUrl(book.id, book.sourceVersion, pages[i])),
+    [book.id, book.sourceVersion, pages]
   )
 
   // ---- toolbar visibility ----

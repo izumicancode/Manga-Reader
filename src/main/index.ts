@@ -83,7 +83,11 @@ async function findLibrarySources(rootDir: string): Promise<string[]> {
 async function librarySignature(rootDir: string): Promise<string> {
   const files = await findLibrarySources(rootDir)
   const parts = await Promise.all(files.map(async (f) => {
-    try { const s = await fsp.stat(f); return `${f}:${s.mtimeMs}:${s.size}` } catch { return `${f}:missing` }
+    try {
+      const stat = await fsp.stat(f)
+      const type = sourceType(f, stat)
+      return `${f}:${type ? await sourceVersion(f, type) : 'unsupported'}`
+    } catch { return `${f}:missing` }
   }))
   return parts.sort().join('|')
 }
@@ -132,6 +136,18 @@ function sourceType(filePath: string, stat?: fs.Stats): SourceType | null {
   return null
 }
 
+async function sourceVersion(filePath: string, type: SourceType): Promise<string> {
+  const stat = await fsp.stat(filePath)
+  const parts = [`${stat.mtimeMs}:${stat.ctimeMs}:${stat.size}`]
+  if (type === 'folder') {
+    for (const name of await sortedFolderImages(filePath)) {
+      const pageStat = await fsp.stat(path.join(filePath, name))
+      parts.push(`${name}:${pageStat.mtimeMs}:${pageStat.ctimeMs}:${pageStat.size}`)
+    }
+  }
+  return crypto.createHash('sha256').update(parts.join('\n')).digest('hex').slice(0, 16)
+}
+
 const cleanTitle = (v: string): string => v.replace(/[._]+/g, ' ').replace(/\s+/g, ' ').trim()
 
 function displayTitle(filePath: string, rootDir: string, type: SourceType | null): string {
@@ -150,7 +166,7 @@ async function sortedFolderImages(folderPath: string): Promise<string[]> {
 }
 
 const cacheKey = (filePath: string, stat?: fs.Stats): string => {
-  try { const s = stat ?? fs.statSync(filePath); return `${filePath}:${s.mtimeMs}:${s.size}` } catch { return filePath }
+  try { const s = stat ?? fs.statSync(filePath); return `${filePath}:${s.mtimeMs}:${s.ctimeMs}:${s.size}` } catch { return filePath }
 }
 
 async function loadRar(filePath: string): Promise<RarEntry> {
@@ -205,10 +221,8 @@ async function countPages(filePath: string, type: SourceType | null): Promise<nu
 
 /** `thumbs` maps book id -> existing cover filename, read once per scan. */
 async function extractCoverToCache(
-  filePath: string, id: string, type: SourceType | null, thumbs: Map<string, string>
+  filePath: string, id: string, type: SourceType | null
 ): Promise<string | null> {
-  const existing = thumbs.get(id)
-  if (existing) return path.join(thumbDir(), existing)
   const out = (e: string): string => path.join(thumbDir(), `${id}-cover${e || '.jpg'}`)
   try {
     if (type === 'image') { const o = out(ext(filePath)); await fsp.copyFile(filePath, o); return o }
@@ -283,24 +297,19 @@ ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
   const existing = libraryStore.get('books', {}) as Record<string, Book>
   const books: Record<string, Book> = {}
   const failed: string[] = []
-  const thumbs = new Map<string, string>()
-  for (const f of await fsp.readdir(thumbDir()).catch(() => [] as string[])) {
-    const i = f.indexOf('-cover.')
-    if (i > 0) thumbs.set(f.slice(0, i), f)
-  }
-
   let processed = 0
   for (const filePath of files) {
     try {
       const id = hashId(filePath)
       const stat = await fsp.stat(filePath)
       const prev = existing[id]
-      const needsRescan = !prev || prev.mtimeMs !== stat.mtimeMs
       const type = sourceType(filePath, stat)
       if (!type) continue
+      const version = await sourceVersion(filePath, type)
+      const needsRescan = !prev || prev.sourceVersion !== version
 
       const reuseCover = !needsRescan && prev?.cover && fs.existsSync(prev.cover)
-      const cover = reuseCover ? prev.cover : await extractCoverToCache(filePath, id, type, thumbs)
+      const cover = reuseCover ? prev.cover : await extractCoverToCache(filePath, id, type)
       const pageCount = needsRescan ? await countPages(filePath, type) : prev.pageCount
       if (pageCount === 0) { failed.push(filePath); continue }
 
@@ -310,7 +319,7 @@ ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
         category: categoryFor(filePath, folder),
         favorite: !!prev?.favorite,
         tags: Array.isArray(prev?.tags) ? prev.tags : [],
-        mtimeMs: stat.mtimeMs, sizeBytes: stat.size
+        mtimeMs: stat.mtimeMs, sizeBytes: stat.size, sourceVersion: version
       }
     } catch (err) {
       console.error('Skipping unreadable file', filePath, (err as Error).message)
@@ -428,7 +437,7 @@ const notFound = (): Response => new Response(null, { status: 404 })
 const IMG_HEADERS = { 'cache-control': 'public, max-age=31536000, immutable' }
 
 async function resolvePageBuffer(book: Book, pageName: string): Promise<Buffer | null> {
-  const key = `${book.filePath}:${pageName}:${book.mtimeMs}`
+  const key = `${book.filePath}:${pageName}:${book.sourceVersion}`
   const cached = pageBinaryCache.get(key)
   if (cached) return cached
 
@@ -454,8 +463,9 @@ function registerImageProtocols(): void {
     try {
       const url = new URL(request.url)
       const book = libraryStore.get(`books.${url.hostname}`) as Book | undefined
-      const pageName = decodeURIComponent(url.pathname.split('/').filter(Boolean).slice(1).join('/'))
-      if (!book || !pageName) return notFound()
+      const [version, ...segments] = url.pathname.split('/').filter(Boolean)
+      const pageName = decodeURIComponent(segments.join('/'))
+      if (!book || version !== book.sourceVersion || !pageName) return notFound()
       const buf = await resolvePageBuffer(book, pageName)
       if (!buf) return notFound()
       return new Response(new Uint8Array(buf), { headers: { 'content-type': mimeFor(pageName), ...IMG_HEADERS } })
@@ -468,7 +478,10 @@ function registerImageProtocols(): void {
   // cover://<bookId>/<mtimeMs>
   protocol.handle('cover', async (request) => {
     try {
-      const book = libraryStore.get(`books.${new URL(request.url).hostname}`) as Book | undefined
+      const url = new URL(request.url)
+      const book = libraryStore.get(`books.${url.hostname}`) as Book | undefined
+      const [version] = url.pathname.split('/').filter(Boolean)
+      if (!book || version !== book.sourceVersion) return notFound()
       if (!book?.cover || !fs.existsSync(book.cover)) return notFound()
       const res = await net.fetch(pathToFileURL(book.cover).toString())
       return new Response(res.body, { headers: { 'content-type': mimeFor(book.cover), ...IMG_HEADERS } })
