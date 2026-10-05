@@ -6,7 +6,7 @@ A modern desktop app for organizing and reading local manga collections, built w
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Electron](https://img.shields.io/badge/Electron-30.x-9feaf9.svg)](https://www.electronjs.org/)
 
-Manga Reader helps you browse your library, import folders and archives, track reading progress, and read manga from local files without friction. It supports folders, image-based collections, and common archive formats such as CBZ and CBR.
+Manga Reader indexes local files in place, so choosing a library folder does not upload or duplicate your manga. Browse covers, track reading progress, and read your collection offline.
 
 ## Highlights
 
