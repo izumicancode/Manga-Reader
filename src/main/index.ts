@@ -282,6 +282,18 @@ const VALIDATORS: { [K in keyof Prefs]: (v: unknown) => boolean } = {
   toolbarHideDelay: (v) => typeof v === 'number' && v >= 500 && v <= 10000
 }
 
+function allowedExternalUrl(value: unknown): URL | null {
+  if (typeof value !== 'string') return null
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && url.hostname === 'github.com' && url.pathname === '/izumicancode' && !url.username && !url.password
+      ? url
+      : null
+  } catch {
+    return null
+  }
+}
+
 ipcMain.handle('set-setting', (_e, key: keyof Prefs, value: unknown) => {
   if (!PREF_KEYS.includes(key) || !VALIDATORS[key](value)) return false
   store.set(key, value)
@@ -294,15 +306,10 @@ ipcMain.handle('reset-settings', () => {
 })
 
 ipcMain.handle('open-external', async (_e, value: unknown) => {
-  if (typeof value !== 'string') return false
-  try {
-    const url = new URL(value)
-    if (url.protocol !== 'https:' || url.hostname !== 'github.com' || url.pathname !== '/izumicancode' || url.username || url.password) return false
-    await shell.openExternal(url.href)
-    return true
-  } catch {
-    return false
-  }
+  const url = allowedExternalUrl(value)
+  if (!url) return false
+  await shell.openExternal(url.href)
+  return true
 })
 
 ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
@@ -570,7 +577,8 @@ function createWindow(): void {
   win.on('enter-full-screen', reportFullscreen)
   win.on('leave-full-screen', reportFullscreen)
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://')) void shell.openExternal(url)
+    const allowedUrl = allowedExternalUrl(url)
+    if (allowedUrl) void shell.openExternal(allowedUrl.href)
     return { action: 'deny' }
   })
 
