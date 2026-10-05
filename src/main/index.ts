@@ -360,10 +360,16 @@ ipcMain.handle('open-book', async (_e, bookId: unknown): Promise<OpenBookResult>
     const pages = await sourcePages(book.filePath, book.type ?? sourceType(book.filePath)!)
     if (!pages.length) return { error: 'no-pages' }
     const hist = historyStore.get(book.id, { page: 0 }) as HistoryEntry
+    const resumePage = Number.isSafeInteger(hist.page)
+      ? Math.max(0, Math.min(hist.page!, pages.length - 1))
+      : 0
+    const bookmarks = Array.isArray(hist.bookmarks)
+      ? [...new Set(hist.bookmarks.filter((page) => Number.isSafeInteger(page) && page >= 0 && page < pages.length))].sort((a, b) => a - b)
+      : []
     return {
       error: null, book, pages,
-      resumePage: Math.min(hist.page || 0, pages.length - 1),
-      bookmarks: hist.bookmarks || []
+      resumePage,
+      bookmarks
     }
   } catch (err) {
     console.error('open-book failed', (err as Error).message)
