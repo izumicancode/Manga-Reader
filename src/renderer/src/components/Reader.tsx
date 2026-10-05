@@ -14,6 +14,7 @@ const FIT_CYCLE: FitMode[] = ['contain', 'width', 'height', 'original']
 const FIT_LABELS: Record<FitMode, string> = { contain: 'Page', width: 'Width', height: 'Height', original: 'Original' }
 const PRELOAD_AHEAD = 2
 const PRELOAD_BEHIND = 1
+const MAX_TRACKED_PRELOADS = 8
 
 const FIT_CLASS: Record<FitMode, string> = {
   contain: 'max-h-full max-w-full object-contain',
@@ -81,6 +82,10 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
       const url = urlFor(i)
       if (!url || preloaded.current.has(url)) continue
       preloaded.current.add(url)
+      if (preloaded.current.size > MAX_TRACKED_PRELOADS) {
+        const oldest = preloaded.current.values().next().value
+        if (oldest) preloaded.current.delete(oldest)
+      }
       const img = new Image()
       img.decoding = 'async'
       img.src = url
