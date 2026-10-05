@@ -95,6 +95,7 @@ npm run dist
 ```
 
 This creates app packages in the release output folder, depending on the target platform.
+Configured targets are a Windows NSIS installer, macOS DMG, and Linux AppImage and DEB packages.
 
 ## Project Structure
 
