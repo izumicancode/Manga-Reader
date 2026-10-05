@@ -19,6 +19,7 @@ const FALLBACK_SETTINGS: Settings = { ...DEFAULT_PREFS, libraryFolder: null, pin
 const settingWriteIds = new Map<keyof Prefs, number>()
 let removeLibraryChangedListener: (() => void) | undefined
 let libraryRefreshId = 0
+let historyRefreshId = 0
 let bootPromise: Promise<void> | null = null
 
 const OPEN_ERRORS: Record<string, string> = {
@@ -129,7 +130,9 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   refreshHistory: async () => {
-    set({ history: await safe(window.api.getHistory(), get().history, 'Could not load reading history.') })
+    const refreshId = ++historyRefreshId
+    const history = await safe(window.api.getHistory(), get().history, 'Could not load reading history.')
+    if (refreshId === historyRefreshId) set({ history })
   },
 
   pickFolder: async () => {
