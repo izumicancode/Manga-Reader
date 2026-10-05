@@ -29,6 +29,7 @@ let fsWatcher: fs.FSWatcher | null = null
 let fallbackPollTimer: NodeJS.Timeout | null = null
 let watchDebounceTimer: NodeJS.Timeout | undefined
 let lastLibrarySignature = ''
+let signatureRequestId = 0
 
 const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif'])
 const ARCHIVE_EXT = new Set(['.cbz', '.zip', '.cbr', '.rar'])
@@ -98,6 +99,7 @@ async function librarySignature(rootDir: string): Promise<string> {
 }
 
 function stopWatching(): void {
+  signatureRequestId += 1
   if (fsWatcher) { try { fsWatcher.close() } catch { /* closed */ } fsWatcher = null }
   if (fallbackPollTimer) clearInterval(fallbackPollTimer)
   fallbackPollTimer = null
@@ -105,7 +107,9 @@ function stopWatching(): void {
 }
 
 async function notifyIfLibraryChanged(folder: string): Promise<void> {
+  const requestId = ++signatureRequestId
   const signature = await librarySignature(folder)
+  if (requestId !== signatureRequestId) return
   if (!lastLibrarySignature) { lastLibrarySignature = signature; return }
   if (signature === lastLibrarySignature) return
   lastLibrarySignature = signature
