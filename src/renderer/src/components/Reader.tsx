@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   ArrowLeft, Bookmark, BookmarkCheck, ChevronLeft, ChevronRight, Columns2, Maximize, Minimize,
   Minus, Plus, Scaling, Square
@@ -81,6 +82,10 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
   const bookmarked = bookmarks.includes(index)
   const toggleBookmark = useCallback(async () => {
     const added = await window.api.toggleBookmark(book.id, index)
+    if (added === null) {
+      toast.error("Couldn't update bookmark.")
+      return
+    }
     setBookmarks((b) => (added ? [...b, index].sort((x, y) => x - y) : b.filter((p) => p !== index)))
   }, [book.id, index])
   const toggleFullscreen = useCallback(async () => setFullscreen(await window.api.toggleFullscreen()), [])

@@ -381,9 +381,9 @@ ipcMain.handle('save-progress', (_e, bookId: unknown, page: unknown, percent: un
   } catch { return false }
 })
 
-ipcMain.handle('toggle-bookmark', (_e, bookId: unknown, page: unknown) => {
+ipcMain.handle('toggle-bookmark', (_e, bookId: unknown, page: unknown): boolean | null => {
   const book = getBook(bookId)
-  if (!book || typeof page !== 'number' || !Number.isSafeInteger(page) || page < 0 || page >= book.pageCount) return false
+  if (!book || typeof page !== 'number' || !Number.isSafeInteger(page) || page < 0 || page >= book.pageCount) return null
   try {
     const history = historyStore.get(book.id, {}) as HistoryEntry
     const bookmarks = Array.isArray(history.bookmarks) ? [...history.bookmarks] : []
@@ -391,7 +391,7 @@ ipcMain.handle('toggle-bookmark', (_e, bookId: unknown, page: unknown) => {
     if (i >= 0) bookmarks.splice(i, 1); else bookmarks.push(page)
     historyStore.set(book.id, { ...history, bookmarks: bookmarks.sort((a, b) => a - b) })
     return i < 0
-  } catch { return false }
+  } catch { return null }
 })
 
 ipcMain.handle('get-history', (): History => {
