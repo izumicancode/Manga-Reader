@@ -150,10 +150,12 @@ async function sourceVersion(filePath: string, type: SourceType): Promise<string
   const stat = await fsp.stat(filePath)
   const parts = [`${stat.mtimeMs}:${stat.ctimeMs}:${stat.size}`]
   if (type === 'folder') {
-    for (const name of await sortedFolderImages(filePath)) {
+    const names = await sortedFolderImages(filePath)
+    const pageParts = await Promise.all(names.map(async (name) => {
       const pageStat = await fsp.stat(path.join(filePath, name))
-      parts.push(`${name}:${pageStat.mtimeMs}:${pageStat.ctimeMs}:${pageStat.size}`)
-    }
+      return `${name}:${pageStat.mtimeMs}:${pageStat.ctimeMs}:${pageStat.size}`
+    }))
+    parts.push(...pageParts)
   }
   return crypto.createHash('sha256').update(parts.join('\n')).digest('hex').slice(0, 16)
 }
