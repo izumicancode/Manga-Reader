@@ -451,7 +451,7 @@ function checkPin(pin: unknown): boolean {
 
 ipcMain.handle('pin-status', () => ({ enabled: !!store.get('pinHash') }))
 ipcMain.handle('pin-set', (_e, pin: unknown) => {
-  if (typeof pin !== 'string' || !/^\d{4}$/.test(pin)) return false
+  if (store.get('pinHash') || typeof pin !== 'string' || !/^\d{4}$/.test(pin)) return false
   const salt = crypto.randomBytes(16).toString('hex')
   store.set('pinSalt', salt)
   store.set('pinHash', scrypt(pin, salt))
