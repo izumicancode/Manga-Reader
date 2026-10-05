@@ -20,6 +20,7 @@ const settingWriteIds = new Map<keyof Prefs, number>()
 let removeLibraryChangedListener: (() => void) | undefined
 let libraryRefreshId = 0
 let historyRefreshId = 0
+let readerOpenRequestId = 0
 let bootPromise: Promise<void> | null = null
 
 const OPEN_ERRORS: Record<string, string> = {
@@ -181,7 +182,9 @@ export const useApp = create<AppState>((set, get) => ({
   setPinEnabled: (enabled) => set({ settings: { ...get().settings, pinEnabled: enabled } }),
 
   openReader: async (bookId) => {
+    const requestId = ++readerOpenRequestId
     const opened = await safe(window.api.openBook(bookId), { error: 'ipc-failed' as const }, "Couldn't open that book.")
+    if (requestId !== readerOpenRequestId) return
     if (opened.error !== null) {
       toast.error(OPEN_ERRORS[opened.error] ?? "Couldn't open that book.")
       return
@@ -190,6 +193,7 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   closeReader: () => {
+    readerOpenRequestId += 1
     set({ reader: null })
     void get().refreshHistory()
   }
