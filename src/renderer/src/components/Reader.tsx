@@ -152,10 +152,12 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
   }
 
   const spreadPages = useMemo(() => {
-    const second = spread ? urlFor(index + 1) : null
-    const first = urlFor(index)
+    const first = { page: index, url: urlFor(index)! }
+    const secondUrl = spread ? urlFor(index + 1) : null
+    if (!secondUrl) return [first]
+    const second = { page: index + 1, url: secondUrl }
     // In RTL spreads the first page sits on the right.
-    return second ? (rtl ? [second, first!] : [first!, second]) : [first!]
+    return rtl ? [second, first] : [first, second]
   }, [index, spread, rtl, urlFor])
 
   const slide = { enter: (d: number) => ({ x: d * 60, opacity: 0 }), center: { x: 0, opacity: 1 }, exit: (d: number) => ({ x: d * -60, opacity: 0 }) }
@@ -188,11 +190,11 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
               className={cn('flex items-center justify-center', fit === 'contain' || fit === 'height' ? 'h-screen' : 'w-full')}
               style={{ scale: zoom }}
             >
-              {spreadPages.map((src) => (
+              {spreadPages.map(({ url, page }) => (
                 <img
-                  key={src}
-                  src={src}
-                  alt=""
+                  key={url}
+                  src={url}
+                  alt={`${book.title}, page ${page + 1}`}
                   decoding="async"
                   draggable={false}
                   className={cn('select-none', FIT_CLASS[fit], spread && spreadPages.length > 1 && 'max-w-[50%]')}
