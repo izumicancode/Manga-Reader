@@ -40,8 +40,8 @@ function Section({ title, index, children, className }: {
   )
 }
 
-function Segmented<K extends keyof Prefs>({ prefKey, options }: {
-  prefKey: K; options: { value: Prefs[K] & string; label: string }[]
+function Segmented<K extends keyof Prefs>({ prefKey, options, label }: {
+  prefKey: K; label: string; options: { value: Prefs[K] & string; label: string }[]
 }): JSX.Element {
   const value = useApp((s) => s.settings[prefKey]) as string
   const update = useApp((s) => s.updateSetting)
@@ -49,6 +49,7 @@ function Segmented<K extends keyof Prefs>({ prefKey, options }: {
     <ToggleGroup
       type="single"
       value={value}
+      aria-label={label}
       // Radix emits '' when the active item is clicked again; ignore so a value is always selected.
       onValueChange={(v) => v && void update(prefKey, v as Prefs[K])}
     >
@@ -142,13 +143,16 @@ export function SettingsView(): JSX.Element {
 
       <Section title="Appearance" index={1}>
         <Row title="Theme">
-          <Segmented prefKey="theme" options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} />
+          <Segmented prefKey="theme" label="Theme" options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} />
         </Row>
         <Row title="Accent Color">
           <div className="flex items-center gap-2">
             {ACCENT_PRESETS.map((c) => (
               <motion.button
                 key={c}
+                type="button"
+                aria-label={`Set accent color ${c}`}
+                aria-pressed={c.toLowerCase() === s.accentColor.toLowerCase()}
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
                 title={c}
@@ -162,6 +166,7 @@ export function SettingsView(): JSX.Element {
             ))}
             <input
               type="color"
+              aria-label="Custom accent color"
               title="Custom color"
               value={s.accentColor}
               onChange={(e) => void updateSetting('accentColor', e.target.value)}
@@ -170,34 +175,36 @@ export function SettingsView(): JSX.Element {
           </div>
         </Row>
         <Row title="Cover Size">
-          <Segmented prefKey="cardSize" options={[
+          <Segmented prefKey="cardSize" label="Cover size" options={[
             { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }
           ]} />
         </Row>
         <Row title="Animations" sub="Hover motion and view transitions.">
-          <Switch checked={s.animationsEnabled} onCheckedChange={(v) => void updateSetting('animationsEnabled', v)} />
+          <Switch aria-label="Enable animations" checked={s.animationsEnabled} onCheckedChange={(v) => void updateSetting('animationsEnabled', v)} />
         </Row>
       </Section>
 
       <Section title="Reading" index={2}>
         <Row title="Reading Direction" sub="Right-to-left matches traditional manga page order.">
-          <Segmented prefKey="readingDirection" options={[
+          <Segmented prefKey="readingDirection" label="Reading direction" options={[
             { value: 'ltr', label: 'Left → Right' }, { value: 'rtl', label: 'Right → Left' }
           ]} />
         </Row>
         <Row title="Default Page Fit">
-          <Segmented prefKey="defaultFit" options={[
+          <Segmented prefKey="defaultFit" label="Default page fit" options={[
             { value: 'contain', label: 'Page' }, { value: 'width', label: 'Width' },
             { value: 'height', label: 'Height' }, { value: 'original', label: 'Original' }
           ]} />
         </Row>
         <Row title="Auto-hide Toolbar" sub="Hide reader controls after a few seconds of inactivity.">
-          <Switch checked={s.toolbarAutoHide} onCheckedChange={(v) => void updateSetting('toolbarAutoHide', v)} />
+          <Switch aria-label="Auto-hide reader toolbar" checked={s.toolbarAutoHide} onCheckedChange={(v) => void updateSetting('toolbarAutoHide', v)} />
         </Row>
         <Row title="Auto-hide Delay">
           <div className={cn('flex w-56 items-center gap-3', !s.toolbarAutoHide && 'opacity-40')}>
             <Slider
               min={1000} max={6000} step={500}
+              aria-label="Toolbar auto-hide delay"
+              aria-valuetext={`${(delay / 1000).toFixed(1)} seconds`}
               value={[delay]}
               disabled={!s.toolbarAutoHide}
               onValueChange={([v]) => setDelay(v)}
@@ -210,7 +217,7 @@ export function SettingsView(): JSX.Element {
 
       <Section title="Security" index={3}>
         <Row title="PIN Lock" sub="Requires a PIN when opening the app. Files on disk are not encrypted.">
-          <Switch checked={s.pinEnabled} onCheckedChange={(v) => setPinMode(v ? 'set' : 'disable')} />
+          <Switch aria-label="PIN lock" checked={s.pinEnabled} onCheckedChange={(v) => setPinMode(v ? 'set' : 'disable')} />
         </Row>
       </Section>
 

@@ -31,7 +31,7 @@ export function TopBar(): JSX.Element {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground">
+        <div role="status" aria-live="polite" aria-atomic="true" className="flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground">
           <span className={cn('h-1.5 w-1.5 rounded-full', TONE_DOT[status.tone])} />
           {status.text}
         </div>
@@ -40,6 +40,8 @@ export function TopBar(): JSX.Element {
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
+              type="button"
+              aria-current={tab === id ? 'page' : undefined}
               onClick={() => setTab(id)}
               className={cn(
                 'relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
@@ -63,6 +65,7 @@ export function TopBar(): JSX.Element {
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
+              type="search"
               value={search}
               onChange={(e) => setFilter({ search: e.target.value })}
               placeholder="Search titles…"
