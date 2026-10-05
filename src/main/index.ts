@@ -289,9 +289,16 @@ ipcMain.handle('reset-settings', () => {
   return DEFAULT_PREFS
 })
 
-ipcMain.handle('open-external', (_e, url: unknown) => {
-  if (typeof url === 'string' && /^https:\/\//.test(url)) void shell.openExternal(url)
-  return true
+ipcMain.handle('open-external', async (_e, value: unknown) => {
+  if (typeof value !== 'string') return false
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' || url.hostname !== 'github.com' || url.pathname !== '/izumicancode' || url.username || url.password) return false
+    await shell.openExternal(url.href)
+    return true
+  } catch {
+    return false
+  }
 })
 
 ipcMain.handle('scan-library', async (): Promise<ScanResult> => {
