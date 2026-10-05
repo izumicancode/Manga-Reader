@@ -20,6 +20,7 @@ Manga Reader indexes local files in place, so choosing a library folder does not
 ## Features
 
 - Organize a library of manga from local directories
+- A folder with images directly inside is one title; folders without direct images are searched recursively for titles
 - Detect and read archive-based manga volumes
 - View cover art and metadata during browsing
 - Continue reading from saved history and bookmarks
