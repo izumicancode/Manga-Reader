@@ -137,7 +137,7 @@ Settings, the library index, and reading history are stored in Electron's per-us
 
 ## Security Note
 
-The app PIN protects the UI layer but does not encrypt files on disk. It is intended as a local access control mechanism, not a full disk-encryption feature.
+The app PIN gates the UI but does not encrypt manga files or other data on disk. PINs use salted scrypt hashes, and five failed verification attempts trigger a 30-second cooldown. Treat the PIN as local UI access control, not disk encryption.
 
 ## Notes on the Current Implementation
 
