@@ -37,6 +37,7 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
   const [bookmarks, setBookmarks] = useState(session.bookmarks)
   const [toolbar, setToolbar] = useState(true)
   const [fullscreen, setFullscreen] = useState(false)
+  const [failedPages, setFailedPages] = useState<number[]>([])
   const hideTimer = useRef<ReturnType<typeof setTimeout>>()
   const preloaded = useRef(new Set<string>())
   const progressFailureReported = useRef(false)
@@ -66,6 +67,8 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
 
   // Reading direction decides which physical side means "forward".
   const turn = useCallback((side: 'left' | 'right') => go((side === 'right') !== rtl ? 1 : -1), [go, rtl])
+
+  useEffect(() => setFailedPages([]), [index, spread])
 
   // ---- persistence + read-ahead prefetch ----
   useEffect(() => {
@@ -190,13 +193,18 @@ export function Reader({ session }: { session: ReaderSession }): JSX.Element {
               className={cn('flex items-center justify-center', fit === 'contain' || fit === 'height' ? 'h-screen' : 'w-full')}
               style={{ scale: zoom }}
             >
-              {spreadPages.map(({ url, page }) => (
+              {spreadPages.map(({ url, page }) => failedPages.includes(page) ? (
+                <div key={url} role="alert" className="flex h-full min-h-64 w-full max-w-md items-center justify-center px-6 text-center text-sm text-white/70">
+                  Page {page + 1} could not be loaded. The source may have changed; close the reader and rescan the library.
+                </div>
+              ) : (
                 <img
                   key={url}
                   src={url}
                   alt={`${book.title}, page ${page + 1}`}
                   decoding="async"
                   draggable={false}
+                  onError={() => setFailedPages((failed) => failed.includes(page) ? failed : [...failed, page])}
                   className={cn('select-none', FIT_CLASS[fit], spread && spreadPages.length > 1 && 'max-w-[50%]')}
                 />
               ))}
