@@ -15,7 +15,11 @@ interface Props {
 export const BookCard = memo(function BookCard({ book, history, index, onOpen, onFavorite }: Props): JSX.Element {
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
-  const percent = history ? Math.round((history.percent || 0) * 100) : 0
+  const savedProgress = history?.percent
+  const progress = typeof savedProgress === 'number' && Number.isFinite(savedProgress)
+    ? Math.min(1, Math.max(0, savedProgress))
+    : 0
+  const percent = Math.round(progress * 100)
   const isNew = !history
   const showImage = book.cover && !failed
 
