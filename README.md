@@ -23,6 +23,7 @@ Manga Reader indexes local files in place, so choosing a library folder does not
 - A folder with images directly inside is one title; folders without direct images are searched recursively for titles
 - Categories come from the first folder below the library root; titles stored at the root use `Uncategorized`
 - Detect and read archive-based manga volumes
+- Pages are ordered naturally by filename, so `page2.jpg` comes before `page10.jpg`
 - View cover art and metadata during browsing
 - Continue reading from saved history and bookmarks
 - Toggle between reading controls and a sleek desktop interface
