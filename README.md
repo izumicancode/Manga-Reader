@@ -31,6 +31,7 @@ Manga Reader indexes local files in place, so choosing a library folder does not
 - Clearing reading history also deletes saved bookmarks; resetting appearance and reading preferences leaves history untouched
 - Configure reader toolbar auto-hide or choose a delay from 1 to 6 seconds in half-second steps
 - Search matches titles and categories; press `Ctrl`/`Cmd`+`K` to focus search and `Escape` to clear it
+- Filter by category, unread status, or favorites, and sort by title, recent activity, progress, or favorites
 - Choose left-to-right or right-to-left reading and page, width, height, or original-size fitting
 - Switch between single-page and double-page spreads; zoom ranges from 50% to 300%
 - Reader keys: arrows or `A`/`D` turn pages, `Home`/`End` jump to either end, `F` changes fit, `+`/`-` zoom, `B` toggles a bookmark, `S` toggles spreads, and `T` toggles the toolbar
